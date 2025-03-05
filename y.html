@@ -9,12 +9,30 @@
       margin: 20px;
     }
     #results .book {
+      display: flex;
+      align-items: center;
       margin-bottom: 15px;
       padding-bottom: 10px;
       border-bottom: 1px solid #ccc;
     }
-    .book h3 {
-      margin: 0 0 5px;
+    .book img {
+      width: 100px;
+      height: 150px;
+      object-fit: cover;
+      margin-right: 15px;
+    }
+    .book-info {
+      flex: 1;
+    }
+    .read-button {
+      padding: 5px 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .read-button:hover {
+      background-color: #0056b3;
     }
     #reader {
       margin-top: 30px;
@@ -24,16 +42,41 @@
       height: 600px;
       border: 1px solid #ccc;
     }
-    .read-button {
-      margin-top: 5px;
-      padding: 5px 10px;
+    .pagination {
+      display: flex
+;    flex-direction: row;
+    text-align: center;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    }
+    .pagination button {
+      padding: 10px;
+      margin: 5px;
+      cursor: pointer;
       background-color: #007bff;
       color: white;
       border: none;
-      cursor: pointer;
     }
-    .read-button:hover {
-      background-color: #0056b3;
+    .pagination button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    #navigation {
+      display: flex
+;    flex-direction: row;
+    text-align: center;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    }
+    .navigation {
+      padding: 10px;
+      margin: 5px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
     }
   </style>
 </head>
@@ -45,72 +88,121 @@
   </form>
   
   <div id="results"></div>
-  
-  <!-- This section will load the book reader if available -->
+ 
+  <div class="pagination">
+    <button id="prevPage" disabled>Previous</button>
+    <div id="navigation"></div>
+    <button id="nextPage" disabled>Next</button>
+  </div>
   <div id="reader"></div>
 
   <script>
-    // Function to clear the reader view
+    let books = [];
+    let currentPage = 0;
+    const booksPerPage = 10;
+
     function clearReader() {
       document.getElementById("reader").innerHTML = "";
     }
 
+    function renderBooks() {
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+      const start = currentPage * booksPerPage;
+      const end = start + booksPerPage;
+      const paginatedBooks = books.slice(start, end);
+
+      paginatedBooks.forEach(book => {
+        const div = document.createElement("div");
+        div.className = "book";
+
+        const coverImg = document.createElement("img");
+        coverImg.src = book.cover_i 
+          ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` 
+          : "https://via.placeholder.com/100x150?text=No+Cover";
+
+        const infoDiv = document.createElement("div");
+        infoDiv.className = "book-info";
+        const title = book.title || "No Title";
+        const authors = book.author_name ? book.author_name.join(", ") : "Unknown Author";
+        infoDiv.innerHTML = `<h3>${title}</h3><p><strong>Author(s):</strong> ${authors}</p>`;
+
+        if (book.ia && book.ia.length > 0) {
+          const readBtn = document.createElement("button");
+          readBtn.className = "read-button";
+          readBtn.textContent = "Read";
+          readBtn.addEventListener("click", function() {
+            const iaId = book.ia[0];
+            const embedUrl = `https://archive.org/embed/${iaId}?ui=embed`;
+            document.getElementById("reader").innerHTML = `<h2>Reading: ${title}</h2><iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
+            document.getElementById("reader").scrollIntoView({ behavior: "smooth" });
+          });
+          infoDiv.appendChild(readBtn);
+        } else {
+          const infoLink = document.createElement("a");
+          infoLink.href = `https://openlibrary.org${book.key}`;
+          infoLink.target = "_blank";
+          infoLink.textContent = "View Details";
+          infoDiv.appendChild(infoLink);
+        }
+
+        div.appendChild(coverImg);
+        div.appendChild(infoDiv);
+        resultsDiv.appendChild(div);
+      });
+
+      document.getElementById("prevPage").disabled = currentPage === 0;
+      document.getElementById("nextPage").disabled = end >= books.length;
+    }
+
     document.getElementById("searchForm").addEventListener("submit", function(e) {
-      e.preventDefault(); // Prevent form submission from refreshing the page
-      clearReader(); // Clear any open reader
+      e.preventDefault();
+      clearReader();
       const query = document.getElementById("query").value;
       const resultsDiv = document.getElementById("results");
       resultsDiv.innerHTML = "<p>Loading...</p>";
-
-      // Use the Open Library search API
+      
       fetch("https://openlibrary.org/search.json?q=" + encodeURIComponent(query))
         .then(response => response.json())
         .then(data => {
-          resultsDiv.innerHTML = "";
-          if (!data.docs || data.docs.length === 0) {
-            resultsDiv.innerHTML = "<p>No results found.</p>";
-            return;
-          }
-          // Loop through each book result
-          data.docs.forEach(book => {
-            const div = document.createElement("div");
-            div.className = "book";
-            const title = book.title ? book.title : "No Title";
-            const authors = book.author_name ? book.author_name.join(", ") : "Unknown Author";
-            div.innerHTML = `<h3>${title}</h3><p><strong>Author(s):</strong> ${authors}</p>`;
-
-            // Check if the book has a digital version available via Internet Archive
-            // The "ia" field contains Internet Archive identifiers if available.
-            if (book.ia && book.ia.length > 0) {
-              const readBtn = document.createElement("button");
-              readBtn.className = "read-button";
-              readBtn.textContent = "Read";
-              // When clicked, embed the reader using the first identifier from the ia array
-              readBtn.addEventListener("click", function() {
-                // Construct the embed URL for the Internet Archive reader
-                // Note: This uses the Internet Archive embed service.
-                const iaId = book.ia[0];
-                const embedUrl = `https://archive.org/embed/${iaId}?ui=embed`;
-                document.getElementById("reader").innerHTML = `<h2>Reading: ${title}</h2><iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
-                // Optionally scroll to the reader section
-                document.getElementById("reader").scrollIntoView({ behavior: "smooth" });
-              });
-              div.appendChild(readBtn);
-            } else {
-              // If no digital version is available, you might link to the Open Library details page
-              const infoLink = document.createElement("a");
-              infoLink.href = `https://openlibrary.org${book.key}`;
-              infoLink.target = "_blank";
-              infoLink.textContent = "View Details";
-              div.appendChild(infoLink);
-            }
-            resultsDiv.appendChild(div);
-          });
+          books = data.docs || [];
+          currentPage = 0;
+          renderBooks();
+          renderPagination();
         })
         .catch(error => {
           resultsDiv.innerHTML = "<p>Error retrieving results.</p>";
           console.error("Error fetching data:", error);
         });
+    });
+
+    function renderPagination() {
+      const navDiv = document.getElementById("navigation");
+      navDiv.innerHTML = "";
+      for (let x = 0; x < Math.ceil(books.length / booksPerPage); x++) {
+        const nav = document.createElement("button");
+        nav.className = "navigation";
+        nav.textContent = x + 1;
+        nav.value = x;
+        nav.addEventListener("click", function() {
+          currentPage = parseInt(this.value);
+          renderBooks();
+        });
+        navDiv.appendChild(nav);
+      }
+    }
+    document.getElementById("prevPage").addEventListener("click", function() {
+      if (currentPage > 0) {
+        currentPage--;
+        renderBooks();
+      }
+    });
+
+    document.getElementById("nextPage").addEventListener("click", function() {
+      if ((currentPage + 1) * booksPerPage < books.length) {
+        currentPage++;
+        renderBooks();
+      }
     });
   </script>
 </body>

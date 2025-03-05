@@ -3,7 +3,7 @@
     display:flex;
     top:0px;
     border-bottom: 1px solid Black;
-    background-color: rgba(193, 167, 153, 0.55); 
+    background-color: rgba(193, 167, 153); 
     align-items: center;
     margin:0 auto;
     width:auto;
@@ -206,15 +206,16 @@
     h6{
         margin:0
     }
-    h1{
+    h1, h2{
     text-align:center;
-    margin-bottom:5px;
+    margin:5px;
     }
     #hclPopup, #summary, .pdf{
         display: none; /* Hidden by default */
         position: fixed;
         top: 50%;
         left: 50%;
+        min-width: 600px;
         transform: translate(-50%, -50%);
         background-color: white;
         border: 2px solid #ccc;
@@ -316,4 +317,85 @@
 
     .User button:hover {
         background-color: #0056b3;
+    }
+    #results .book {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+    .book img {
+      width: 100px;
+      height: 150px;
+      object-fit: cover;
+      margin-right: 15px;
+    }
+    .book-info {
+      flex: 1;
+    }
+    .read-button {
+      padding: 5px 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .read-button:hover {
+      background-color: #0056b3;
+    }
+    #reader {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        border: 2px solid #ccc;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+      width: 1000px;
+      height: 650px;
+    }
+    #reader iframe {
+      width: 100%;
+      height: 600px;
+      border: 1px solid #ccc;
+    }
+    .pagination {
+      display: flex
+;    flex-direction: row;
+    text-align: center;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    }
+    .pagination button {
+      padding: 10px;
+      margin: 5px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+    }
+    .pagination button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    #navigation {
+      display: flex
+;    flex-direction: row;
+    text-align: center;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    }
+    .navigation {
+      padding: 10px;
+      margin: 5px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
     }

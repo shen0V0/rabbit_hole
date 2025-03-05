@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="My_CSS.css">
     <link rel="icon" href="rabbit_hole_icon.png">
     <script type="module" src="firebase.js" defer></script>
@@ -12,11 +14,11 @@
 <body>
     <div class="Head">
         <div>
-            <a href="./Rabbit_hole.html">
+            <a href="./index.html">
                 <img src="rabbit_hole_icon.png">
             </a>
         </div>
-        <a class="home_title" href="./Rabbit_hole.html">
+        <a class="home_title" href="./index.html">
             <div>Rabbit Hole</div>
             <span class="span2">Dig into learning</span>
         </a>
@@ -29,11 +31,11 @@
             </div>
         </div>
         <div class="dropdown">
-            <button class="dropdown-button" onclick="">Learning</button>
+            <button class="dropdown-button" onclick="window.location.href='./books.html'">Learning</button>
             <div class="dropdown-content" id="dropdownMenu2">
-                <a href="#option1">Mathematics</a>
-                <a href="#option2">History</a>
-                <a href="#option3">Literature</a>
+                <a href="./books.html?query=fairy%20tale">Fairy Tale</a>
+                <a href="./books.html?query=history">History</a>
+                <a href="./books.html?query=literature">Literature</a>
             </div>
         </div>
         <div class="dropdown">

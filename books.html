@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="My_CSS.css">
+    <link rel="icon" href="rabbit_hole_icon.png">
+    <script type="module" src="firebase.js" defer></script>
+    <script  src="javascript.js" defer></script>
+    
+    <title>Rabbit Hole</title>
+</head>
+
+<body>
+    <div class="Head">
+        <div>
+            <a href="./index.html">
+                <img src="rabbit_hole_icon.png">
+            </a>
+        </div>
+        <a class="home_title" href="./index.html">
+            <div>Rabbit Hole</div>
+            <span class="span2">Dig into learning</span>
+        </a>
+        <div class="dropdown">
+            <button class="dropdown-button" onclick="">Games</button>
+            <div class="dropdown-content" id="dropdownMenu1">
+                <a href="#option1">Option 1</a>
+                <a href="#option2">Option 2</a>
+                <a href="#option3">Option 3</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <button class="dropdown-button" onclick="">Learning</button>
+            <div class="dropdown-content" id="dropdownMenu2">
+                <a href="./books.html?query=fairy%20tale">Fairy Tale</a>
+                <a href="./books.html?query=history">History</a>
+                <a href="./books.html?query=literature">Literature</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <button class="dropdown-button" onclick="togglePopup()">About Us</button>
+        </div>
+        <div class="User"></div>
+    </div>
+    <div class="container">
+        <div id="overlay"></div>
+  <div id="reader"></div>
+        <div id="hclPopup">
+            <button class="close-button" onclick="togglePopup()">Close</button>
+            <h2>What is Rabbit Hole?</h2>
+            <p>
+                Welcome to Rabbit Hole, an online learning platform designed to make education fun and engaging. We believe that learning shouldn't be boring-our platform integrates game-like experiences, allowing users to enjoy the process while tracking their progress in real-time.
+                <br>We hope every user can dive into the Rabbit Hole, exploring deeper into the vast world of knowledge, uncovering new insights, and making learning an exciting adventure.
+            </p>
+            <h2>Who are we</h2>
+            <p>
+                We are the White Rabbits, tirelessly digging the tunnels of curiosity, creating a maze of knowledge for wanderers who seek wisdom. Once you step into our Rabbit Hole, there's no turning back-only deeper exploration, endless discovery, and the thrill of learning. We set the traps not to ensnare, but to guide the curious, leading them through the winding paths of knowledge, unlocking new skills, and making learning an adventure worth diving into.
+            </p>
+        </div>
+        <div class="leftbox" style="flex-direction: column;">
+            <h1>Book Search & Read</h1>
+  <form id="searchForm">
+    <input type="text" id="query" placeholder="Enter book title or author" required>
+    <button type="submit">Search</button>
+  </form>
+  
+  <div id="results"></div>
+ 
+  <div class="pagination">
+    <button id="prevPage" disabled>Previous</button>
+    <div id="navigation"></div>
+    <button id="nextPage" disabled>Next</button>
+  </div>
+
+        </div>
+        <div class="rightbox"></div>
+    </div>
+</body>
+</html>
