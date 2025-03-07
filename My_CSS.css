@@ -244,33 +244,55 @@
         float: right;
     }
     .rightbox{
-        border: 1px solid black;
+        border: none;
         min-width: 250px;
         display:flex;
         flex:1;
         margin: 20px 30px 20px 0px;
-        padding: 20px;
         display: flex;
         flex-direction: row;
     }
     .leftbox{
         min-width:420px;
-        border: 1px solid black;
+        align-content: flex-start;
         display:flex;
         flex:4;
         padding: 40px;
         margin: 30px;
         flex-wrap: wrap;
         gap: 20px; 
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
     }
+    
     .tabs{
+      display: flex;
+      flex-direction: row;
         flex: 0 1 calc(50% - 20px); 
         box-sizing: border-box; 
-        height:150px;
+        min-height:150px;
         min-width: 200px;
-        background-color:lightcoral;
         z-index: 2;
     }
+    .tabs img {
+      border:1px solid balck;
+      border-radius: 25px;
+      display: block;
+      width: 50%;
+      height: auto;
+      object-fit: cover; /* Use 'cover' to fill the container, or 'contain' if you want the full image visible */
+  }
+  .game_detail{
+    padding-left: 20px;
+  }
+  .game_detail h2{
+    text-align: left;
+    margin-bottom: 1px;
+  }
+  
     .User {
         position: relative;
         align-items: center;
@@ -331,6 +353,7 @@
       object-fit: cover;
       margin-right: 15px;
     }
+    
     .book-info {
       flex: 1;
     }
@@ -398,4 +421,40 @@
       background-color: #007bff;
       color: white;
       border: none;
+    }
+    .leaderboard {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+    }
+    .leaderboard h3 {
+        color: #007bff;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+    }
+    .leaderboard-section {
+        background: #ffffff;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .leaderboard-section h4 {
+        color: #28a745;
+    }
+    .leaderboard ul {
+        list-style: none;
+        padding: 0;
+    }
+    .leaderboard ul li {
+        background: #e9ecef;
+        padding: 8px;
+        margin: 5px 0;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+    .leaderboard ul li:hover {
+        background: #d4edda;
     }
