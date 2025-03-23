@@ -258,4 +258,96 @@ document.addEventListener("DOMContentLoaded", function() {
     search();
   });
   
-  
+ function Login(){
+    console.log("works");
+    const overlay = document.getElementById('overlay');
+    const popup = document.createElement('div');
+        popup.id = 'authPopup';
+        popup.innerHTML = `
+            <div class="popup-content">
+                <button class="close-button" onclick="closePopup()">close</button>
+                <h2 id="authTitle">Login</h2>
+                
+                <form id="loginForm">
+                    <input type="text" id="loginEmail" placeholder="Email or Username" required>
+                    <input type="password" id="loginPassword" placeholder="Password" required>
+                    <button class="button" onclick='login()'>Login</button>
+                    <p>Don't have an account? <a href="#" onclick="switchToRegister()">Register</a></p>
+                </form>
+
+                <form id="registerForm" style="display: none;">
+                    <input type="text" id="registerUsername" placeholder="Username" required>
+                    <input type="text" id="registerEmail" placeholder="Email" required>
+                    <input type="password" id="registerPassword" placeholder="Password" required>
+                    <input type="password" id="registerConfirmPassword" placeholder="Confirm Password" required>
+                    <button class="button" onclick='register'>Sign-up</button>
+                    <p>Already have an account? <a href="#" onclick="switchToLogin()">Login</a></p>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(popup);
+    
+
+    popup.style.display = 'block';
+    overlay.style.display = 'block';
+};
+
+function closePopup() {
+    document.getElementById('authPopup').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+}
+
+function switchToRegister() {
+    document.getElementById('authTitle').innerText = "Register";
+    document.getElementById('loginForm').style.display = "none";
+    document.getElementById('registerForm').style.display = "block";
+}
+
+function switchToLogin() {
+    document.getElementById('authTitle').innerText = "Login";
+    document.getElementById('loginForm').style.display = "block";
+    document.getElementById('registerForm').style.display = "none";
+}
+function showAlert(message) {
+  // Check if an alert already exists
+  let existingPopup = document.getElementById("popup-alert");
+  if (existingPopup) {
+      existingPopup.remove();
+  }
+
+  // Create the pop-up container
+  const popup = document.createElement("div");
+  popup.id = "popup-alert";
+  popup.className = "popup-container";
+
+  // Create the message div
+  const messageDiv = document.createElement("div");
+  messageDiv.className = "popup-message";
+  messageDiv.innerText = message;
+
+  // Create the close button
+  const closeButton = document.createElement("button");
+  closeButton.className = "popup-close";
+  closeButton.innerText = "×";
+  closeButton.onclick = function () {
+      popup.style.opacity = "0";
+      setTimeout(() => popup.remove(), 300); // Smooth fade-out effect
+  };
+
+  // Append elements
+  popup.appendChild(messageDiv);
+  popup.appendChild(closeButton);
+  document.body.appendChild(popup);
+
+  // Show the popup with animation
+  setTimeout(() => {
+      popup.style.opacity = "1";
+      popup.style.transform = "translate(-50%, -50%) scale(1)";
+  }, 50);
+
+  // Auto close after 3 seconds
+  setTimeout(() => {
+      popup.style.opacity = "0";
+      setTimeout(() => popup.remove(), 300);
+  }, 3000);
+}

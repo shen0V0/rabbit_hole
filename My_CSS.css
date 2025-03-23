@@ -7,7 +7,7 @@
     align-items: center;
     margin:0 auto;
     width:auto;
-    min-width: 950px;
+    min-width: 1250px;
     height:13%;
     font-size:24px;
     justify-content: Left;
@@ -94,6 +94,7 @@
   text-decoration: underline;
 }
 .container {
+  align-items: flex-start; 
     position:relative;
     width: 100%;
     min-width: 980px;
@@ -127,7 +128,7 @@
     .home_title{
         color:black; 
         display: flex; 
-       
+       font-family:'Zapfino, cursive';
         flex-direction: column; 
         align-items: center; 
         line-height: 1; 
@@ -245,7 +246,7 @@
     }
     .rightbox{
         border: none;
-        min-width: 250px;
+        min-width: 275px;
         display:flex;
         flex:1;
         margin: 20px 30px 20px 0px;
@@ -253,12 +254,12 @@
         flex-direction: row;
     }
     .leftbox{
-        min-width:420px;
+        min-width: 900px;
         align-content: flex-start;
         display:flex;
         flex:4;
         padding: 40px;
-        margin: 30px;
+        margin: 20px 30px 20px 30px;
         flex-wrap: wrap;
         gap: 20px; 
         background: #f8f9fa;
@@ -273,15 +274,15 @@
       flex-direction: row;
         flex: 0 1 calc(50% - 20px); 
         box-sizing: border-box; 
-        min-height:150px;
-        min-width: 200px;
+        height:150px;
+       width: 200px;
         z-index: 2;
     }
     .tabs img {
       border:1px solid balck;
       border-radius: 25px;
       display: block;
-      width: 50%;
+      width: 150px;
       height: auto;
       object-fit: cover; /* Use 'cover' to fill the container, or 'contain' if you want the full image visible */
   }
@@ -294,10 +295,12 @@
   }
   
     .User {
+      height: 50px;
+      width: 80px;
         position: relative;
         align-items: center;
         gap: 10px;
-        padding-right: 75px;
+        padding-right: 130px;
         display: flex;
         margin-left: auto; /* Pushes the element to the right */
     }
@@ -329,9 +332,11 @@
     }
 
     .User button {
-        background-color: #007BFF;
-        color: white;
-        border: none;
+      height: 100%;
+      width: 100%;
+        background-color: #ded77ebd;
+        border: 1px black solid;
+        color: black;
         padding: 5px 10px;
         border-radius: 5px;
         cursor: pointer;
@@ -427,10 +432,9 @@
         padding: 20px;
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        margin-top: 20px;
     }
     .leaderboard h3 {
-        color: #007bff;
+        color: #f7232d;
         border-bottom: 2px solid #007bff;
         padding-bottom: 5px;
     }
@@ -457,4 +461,110 @@
     }
     .leaderboard ul li:hover {
         background: #d4edda;
-    }
+    }/* Overlay to blur the background */
+
+/* Main popup container */
+#authPopup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  width: 350px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  display: none; /* Initially hidden */
+  z-index: 1001;
+  text-align: center;
+}
+
+/* Login/Register title */
+#authPopup h2 {
+  margin-bottom: 15px;
+  font-size: 22px;
+  color: #333;
+}
+
+/* Input fields */
+#authPopup input {
+  width: 90%;
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+/* Login and Register buttons */
+#authPopup .button {
+  width: 100%;
+  padding: 10px;
+  background: #007bff;
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: 0.3s;
+}
+
+#authPopup .button:hover {
+  background: #0056b3;
+}
+
+/* Toggle link for switching between Login/Register */
+.toggle-link {
+  display: block;
+  margin-top: 10px;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.toggle-link:hover {
+  text-decoration: underline;
+}
+/* Popup container */
+.popup-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  z-index: 9999;
+  width: 300px;
+  max-width: 80%;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Message text */
+.popup-message {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+/* Close button */
+.popup-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: white;
+  cursor: pointer;
+}
+
+/* Close button hover effect */
+.popup-close:hover {
+  color: red;
+}
+

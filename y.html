@@ -2,101 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Open Library Book Search & Read</title>
+  <title>Book Search with Preview Filter</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    #results .book {
-      display: flex;
-      align-items: center;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #ccc;
-    }
-    .book img {
-      width: 100px;
-      height: 150px;
-      object-fit: cover;
-      margin-right: 15px;
-    }
-    .book-info {
-      flex: 1;
-    }
-    .read-button {
-      padding: 5px 10px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .read-button:hover {
-      background-color: #0056b3;
+    /* Basic styles for layout and clarity */
+    .book { display: flex; margin-bottom: 1rem; }
+    .book img { margin-right: 1rem; }
+    .book-info { max-width: 600px; }
+    .read-button, .navigation { margin-top: 0.5rem; }
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
     }
     #reader {
-      margin-top: 30px;
-    }
-    #reader iframe {
-      width: 100%;
-      height: 600px;
-      border: 1px solid #ccc;
-    }
-    .pagination {
-      display: flex
-;    flex-direction: row;
-    text-align: center;
-    flex-wrap: nowrap;
-    justify-content: center;
-    align-items: center;
-    }
-    .pagination button {
-      padding: 10px;
-      margin: 5px;
-      cursor: pointer;
-      background-color: #007bff;
-      color: white;
-      border: none;
-    }
-    .pagination button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
-    #navigation {
-      display: flex
-;    flex-direction: row;
-    text-align: center;
-    flex-wrap: nowrap;
-    justify-content: center;
-    align-items: center;
-    }
-    .navigation {
-      padding: 10px;
-      margin: 5px;
-      cursor: pointer;
-      background-color: #007bff;
-      color: white;
-      border: none;
+      display: none;
+      position: fixed;
+      top: 10%; left: 10%;
+      width: 80%; height: 80%;
+      background: #fff;
+      padding: 1rem;
+      overflow: auto;
     }
   </style>
 </head>
 <body>
-  <h1>Book Search & Read</h1>
-  <form id="searchForm">
-    <input type="text" id="query" placeholder="Enter book title or author" required>
-    <button type="submit">Search</button>
-  </form>
-  
-  <div id="results"></div>
- 
-  <div class="pagination">
-    <button id="prevPage" disabled>Previous</button>
-    <div id="navigation"></div>
-    <button id="nextPage" disabled>Next</button>
-  </div>
+  <!-- Overlay, Popup and Reader elements -->
+  <div id="overlay"></div>
+  <div id="hclPopup" style="display: none;">Popup Content</div>
   <div id="reader"></div>
 
+  <!-- Search Form -->
+  <form id="searchForm">
+    <input type="text" id="query" placeholder="Search for books" required>
+    <button type="submit">Search</button>
+  </form>
+
+  <!-- Results & Navigation -->
+  <div id="results"></div>
+  <div id="navigation"></div>
+  <button id="prevPage">Prev</button>
+  <button id="nextPage">Next</button>
+
   <script>
+    // Toggle functions using getComputedStyle for more reliable results
+    function toggleDropdown(menuId) {
+      const dropdown = document.getElementById(menuId);
+      const display = window.getComputedStyle(dropdown).display;
+      dropdown.style.display = display === "block" ? "none" : "block";
+    }
+
+    function togglePopup() {
+      const popup = document.getElementById('hclPopup');
+      const overlay = document.getElementById('overlay');
+      const display = window.getComputedStyle(popup).display;
+      const isVisible = display === 'block';
+      popup.style.display = isVisible ? 'none' : 'block';
+      overlay.style.display = isVisible ? 'none' : 'block';
+    }
+
+    function togglereader() {
+      const popup = document.getElementById('reader');
+      const overlay = document.getElementById('overlay');
+      const display = window.getComputedStyle(popup).display;
+      const isVisible = display === 'block';
+      popup.style.display = isVisible ? 'none' : 'block';
+      overlay.style.display = isVisible ? 'none' : 'block';
+    }
+
+    // Book search and pagination variables
     let books = [];
     let currentPage = 0;
     const booksPerPage = 10;
@@ -105,6 +80,7 @@
       document.getElementById("reader").innerHTML = "";
     }
 
+    // Render the list of books and apply preview filtering
     function renderBooks() {
       const resultsDiv = document.getElementById("results");
       resultsDiv.innerHTML = "";
@@ -116,6 +92,7 @@
         const div = document.createElement("div");
         div.className = "book";
 
+        // Set cover image or a placeholder if not available
         const coverImg = document.createElement("img");
         coverImg.src = book.cover_i 
           ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` 
@@ -127,18 +104,37 @@
         const authors = book.author_name ? book.author_name.join(", ") : "Unknown Author";
         infoDiv.innerHTML = `<h3>${title}</h3><p><strong>Author(s):</strong> ${authors}</p>`;
 
+        // Check if the book has Archive.org data
         if (book.ia && book.ia.length > 0) {
-          const readBtn = document.createElement("button");
-          readBtn.className = "read-button";
-          readBtn.textContent = "Read";
-          readBtn.addEventListener("click", function() {
-            const iaId = book.ia[0];
-            const embedUrl = `https://archive.org/embed/${iaId}?ui=embed`;
-            document.getElementById("reader").innerHTML = `<h2>Reading: ${title}</h2><iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
-            document.getElementById("reader").scrollIntoView({ behavior: "smooth" });
-          });
-          infoDiv.appendChild(readBtn);
+          if (book.has_fulltext) {
+            // Full text available: add a "Read" button
+            const readBtn = document.createElement("button");
+            readBtn.className = "read-button";
+            readBtn.textContent = "Read";
+            readBtn.addEventListener("click", function() {
+              togglereader();
+              const iaId = book.ia[0];
+              const embedUrl = `https://archive.org/embed/${iaId}?ui=embed`;
+              document.getElementById("reader").innerHTML = `
+                <button class="close-button" onclick="togglereader()">Close</button>
+                <h2>Reading: ${title}</h2>
+                <iframe src="${embedUrl}" frameborder="0" allowfullscreen style="width:100%; height:80%;"></iframe>`;
+              document.getElementById("reader").scrollIntoView({ behavior: "smooth" });
+            });
+            infoDiv.appendChild(readBtn);
+          } else {
+            // Preview-only: show default message and link to details
+            const defaultMsg = document.createElement("p");
+            defaultMsg.textContent = "This book is available as a preview only.";
+            infoDiv.appendChild(defaultMsg);
+            const infoLink = document.createElement("a");
+            infoLink.href = `https://openlibrary.org${book.key}`;
+            infoLink.target = "_blank";
+            infoLink.textContent = "View Details";
+            infoDiv.appendChild(infoLink);
+          }
         } else {
+          // No Archive.org data: simply show a "View Details" link
           const infoLink = document.createElement("a");
           infoLink.href = `https://openlibrary.org${book.key}`;
           infoLink.target = "_blank";
@@ -151,17 +147,24 @@
         resultsDiv.appendChild(div);
       });
 
+      // Disable/enable pagination buttons based on current page
       document.getElementById("prevPage").disabled = currentPage === 0;
       document.getElementById("nextPage").disabled = end >= books.length;
     }
 
+    // Listen for search form submissions
     document.getElementById("searchForm").addEventListener("submit", function(e) {
       e.preventDefault();
       clearReader();
+      search();
+    });
+
+    // Search function to fetch book data from Open Library
+    function search() {
       const query = document.getElementById("query").value;
       const resultsDiv = document.getElementById("results");
       resultsDiv.innerHTML = "<p>Loading...</p>";
-      
+
       fetch("https://openlibrary.org/search.json?q=" + encodeURIComponent(query))
         .then(response => response.json())
         .then(data => {
@@ -174,8 +177,9 @@
           resultsDiv.innerHTML = "<p>Error retrieving results.</p>";
           console.error("Error fetching data:", error);
         });
-    });
+    }
 
+    // Render pagination buttons based on total results
     function renderPagination() {
       const navDiv = document.getElementById("navigation");
       navDiv.innerHTML = "";
@@ -191,6 +195,8 @@
         navDiv.appendChild(nav);
       }
     }
+
+    // Previous/Next button event listeners
     document.getElementById("prevPage").addEventListener("click", function() {
       if (currentPage > 0) {
         currentPage--;
