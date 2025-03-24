@@ -296,15 +296,22 @@
   
     .User {
       height: 50px;
-      width: 80px;
-        position: relative;
-        align-items: center;
-        gap: 10px;
-        padding-right: 130px;
-        display: flex;
-        margin-left: auto; /* Pushes the element to the right */
+      width: 200px;
+      position: relative;
+      align-items: center;
+      gap: 10px;
+      padding-right: 80px;
+      display: flex;
+      margin-left: auto;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-content: stretch;
     }
-    
+    .User img{
+      height: 50px;
+      border-radius: 50%;
+      background-color: white;
+    }
     .login{
             width: 170px;
             display: flex;
@@ -333,13 +340,14 @@
 
     .User button {
       height: 100%;
-      width: 100%;
-        background-color: #ded77ebd;
-        border: 1px black solid;
-        color: black;
-        padding: 5px 10px;
-        border-radius: 5px;
-        cursor: pointer;
+    width: 40%;
+    min-width: 70px;
+    background-color: #ded77ebd;
+    border: 1px black solid;
+    color: black;
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
     }
 
     .User button:hover {
@@ -459,13 +467,10 @@
         border-radius: 5px;
         transition: background 0.3s;
     }
-    .leaderboard ul li:hover {
-        background: #d4edda;
-    }/* Overlay to blur the background */
-
+ 
 /* Main popup container */
 #authPopup {
-  position: absolute;
+  position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -475,7 +480,7 @@
   border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
   display: none; /* Initially hidden */
-  z-index: 1001;
+  z-index: 3001;
   text-align: center;
 }
 
