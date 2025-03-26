@@ -110,11 +110,15 @@ function warning(msg) {
   }, 1000);
 }
 
-function formatTime(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return minutes.toString().padStart(2, "0") + ":" + secs.toString().padStart(2, "0");
+function formatTime(hours) {
+  const totalSeconds = Math.floor(hours * 3600); // Convert hours to seconds
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+
+  return `${h.toString().padStart(2, "0")}h ${m.toString().padStart(2, "0")}m ${s.toString().padStart(2, "0")}s`;
 }
+
 
 // ---------- Login Function ----------
 async function login() {
@@ -210,8 +214,8 @@ async function register() {
     await setDoc(userDocRef, {});
     await setDoc(doc(collection(userDocRef, "UserInfo"), "Profile"), userData);
     // Initialize empty collections (if needed)
-    await setDoc(doc(collection(userDocRef, "Game")), "Games");
-    await setDoc(doc(collection(userDocRef, "BookShelf")), "Books");
+    await setDoc(doc(collection(userDocRef, "Game"),), {});
+    await setDoc(doc(collection(userDocRef, "BookShelf"),), {});
     showAlert("Registration successful! Welcome to Rabbit Hole.");
     closePopup();
   } catch (error) {
@@ -223,8 +227,8 @@ async function register() {
     } else {
       showAlert("Registration failed: " + error.message);
     }
-  }
-  location.reload();
+  }document.querySelector(".username").textContent = username;
+
 }
 
 // ---------- Logout Function ----------
@@ -242,78 +246,276 @@ function logout(msg) {
     });
 }
 
-// ---------- Utility Functions & Global Exposure ----------
+// ---------- Book reading window ----------
 
-
-const Myfunction = {
-  login,
-  register,
-  logout,
-  checkUserStatus,
-  showBookActionWindow
-};
-
-window.Myfunction = Myfunction;
-window.onload = () => {
-  checkUserStatus();
-};
-// Floating window to show book actions in reader view
 async function showBookActionWindow(book) {
-    let floatingDiv = document.getElementById("bookActionWindow");
-    if (!floatingDiv) {
-      floatingDiv = document.createElement("div");
-      floatingDiv.id = "bookActionWindow";
-      Object.assign(floatingDiv.style, {
-        position: "fixed",
-        top: "5px",
-        right: "5px",
-        backgroundColor: "#fff",
-        border: "1px solid #ccc",
-        padding: "10px",
-        boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
-        zIndex: "2000"
-      });
-      document.body.appendChild(floatingDiv);
+  let floatingDiv = document.getElementById("bookActionWindow");
+  if (!floatingDiv) {
+    floatingDiv = document.createElement("div");
+    floatingDiv.id = "bookActionWindow";
+    Object.assign(floatingDiv.style, {
+      position: "fixed",
+      top: "5px",
+      right: "5px",
+      backgroundColor: "#fff",
+      border: "1px solid #ccc",
+      padding: "10px",
+      boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+      zIndex: "2000"
+    });
+    document.body.appendChild(floatingDiv);
+  }
+  
+  const user = auth.currentUser;
+  if (!user) {
+    floatingDiv.innerHTML = `<button onclick="Login()">Sign in to add to shelf</button>`;
+    showBookActionWindow(book);
+    return;
+  }
+
+  const bookId = book.ia?.[0];
+  if (!bookId) {
+    console.error("Book ID is missing.");
+    showAlert("Error: Book data is incomplete.", "#f44336", 3);
+    return;
+  }
+  
+  console.log("Checking book ID:", bookId);
+
+  const docRef = doc(db, "User", user.uid, "BookShelf", bookId);
+  let exists = false;
+  let totalRead = 0;
+  let thisWeekRead = 0;
+  let lastMondayStored = null;
+
+  try {
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      exists = true;
+      const bookData = docSnap.data();
+      totalRead = bookData.totalRead || 0;
+      thisWeekRead = bookData.thisWeekRead || 0;
+      lastMondayStored = bookData.weekStart ? new Date(bookData.weekStart.toDate()) : getLastMonday();
     }
+  } catch (error) {
+    console.error("Error checking bookshelf:", error);
+  }
+
+  // Get the current week's Monday
+  const currentMonday = getLastMonday();
+  const daysDifference = Math.floor((currentMonday - lastMondayStored) / (1000 * 60 * 60 * 24));
+
+  // Reset weekly reading if today’s Monday is different from stored Monday and the gap is ≥7 days
+  if (daysDifference >= 7) {
+    thisWeekRead = 0;
+    lastMondayStored = currentMonday;
+  }
+
+  if (exists) {
+    // Retrieve profile data from Firestore.
+    const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
+    const profileSnap = await getDoc(profileRef);
+    const profileData = profileSnap.exists() ? profileSnap.data() : {};
+    const username = profileData.username || "User";
     
-    // Check if the user is signed in.
-    const user = auth.currentUser;
-    if (!user) {
-      floatingDiv.innerHTML = `<button onclick="Login()">Sign in to add to shelf</button>`;
-      showBookActionWindow(book);
-    } else {
-        console.log("bookname:"+book.ia[0]);
-              const shelfRef = collection(db, "User", user.uid, "BookShelf");
-      let exists = false;
-      try {
-        const querySnapshot = await getDocs(shelfRef);
-        querySnapshot.forEach(docSnap => {
-          const data = docSnap.data();
-          if (data.bookid === book.ia[0]) {
-            exists = true;
-          }
-        });
-      } catch (error) {
-        console.error("Error checking bookshelf:", error);
+    floatingDiv.innerHTML = `
+    <p>Signed in as ${username}</p>
+    <p><strong>Total Reading Time:</strong> <span id="totalReadTime">${totalRead.toFixed(2)}</span> </p>
+    <p><strong>Reading Time This Week:</strong> <span id="thisWeekReadTime">${thisWeekRead.toFixed(2)}</span> </p>
+    <p id="activity-warning" style="color: red; display: none;">Inactive! Tracking paused.</p>
+    <button id="removeShelfButton">Delete from Bookshelf</button>
+  `;
+  
+    document.getElementById("removeShelfButton").onclick = () => removeFromShelf(book);
+    trackReadingTime(user.uid, bookId, totalRead, thisWeekRead, lastMondayStored);
+  } else {
+    // In case the book doesn't exist in bookshelf, retrieve the username similarly.
+    const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
+    const profileSnap = await getDoc(profileRef);
+    const profileData = profileSnap.exists() ? profileSnap.data() : {};
+    const username = profileData.username || "User";
+  
+    floatingDiv.innerHTML = `
+      <p>Signed in as ${username}</p>
+      <button id="addShelfButton">Add to Bookshelf</button>
+    `;
+    document.getElementById("addShelfButton").onclick = () => addToShelf(book);
+  }
+  
+
+  console.log("Book Details:", book);
+}
+
+// Tracks reading time (active time only) and updates Firestore.
+// Tracks reading time (active time only) and updates Firestore.
+function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
+  if (!userId || !bookId) {
+    console.error("Missing userId or bookId");
+    return;
+  }
+  
+  let activeStart = Date.now();
+  let trackingInterval;
+  let inactivityTimeout;
+  
+  // Variables for continuous active reading tracking.
+  let readNowSeconds = 0;
+  let readNowInterval;
+  
+  const reader = document.getElementById("reader");
+  let track = true;
+  
+  // Called whenever an activity event occurs.
+  function onActivity() {
+    if (!reader || window.getComputedStyle(reader).display !== "block") {
+      return; // Do nothing if reader is hidden.
+    }
+    const computedStyle = window.getComputedStyle(reader);
+    const warningElem = document.getElementById("activity-warning");
+    
+    if (track) {
+      // If a warning is shown, resume tracking.
+      if (warningElem && warningElem.style.display === "block") {
+        activeStart = Date.now();
+        startTracking();
+        if (warningElem) warningElem.style.display = "none";
       }
+      // Reset inactivity timeout.
+      clearTimeout(inactivityTimeout);
+      inactivityTimeout = setTimeout(() => {
+        clearInterval(trackingInterval);
+        clearInterval(readNowInterval);
+        if (warningElem) {
+          warningElem.style.display = "block";
+        }
+      }, 30000);
       
-      if (exists) {
-        floatingDiv.innerHTML = `
-          <p>Signed in as ${user.email}</p>
-          <button id="removeShelfButton">Delete from Bookshelf</button>
-        `;
-        document.getElementById("removeShelfButton").onclick = () => removeFromShelf(book);
-      } else {
-        floatingDiv.innerHTML = `
-          <p>Signed in as ${user.email}</p>
-          <button id="addShelfButton">Add to Bookshelf</button>
-        `;
-        document.getElementById("addShelfButton").onclick = () => addToShelf(book);
+      // Stop tracking if the reader is not visible.
+      if (computedStyle.display === "none") {
+        stopTracking();
       }
-      console.log(book);
     }
   }
   
+  function updateUI() {
+    const totalReadElement = document.getElementById("totalReadTime");
+    const thisWeekReadElement = document.getElementById("thisWeekReadTime");
+    if (totalReadElement && thisWeekReadElement) {
+      totalReadElement.innerText = `${totalRead.toFixed(2)} hours`;
+      thisWeekReadElement.innerText = `${thisWeekRead.toFixed(2)} hours`;
+    }
+  }
+  
+  // Displays a discreet notification at the top-right.
+  function showLongReadingNotification() {
+    let notif = document.getElementById("longReadingNotification");
+    if (!notif) {
+      notif = document.createElement("div");
+      notif.id = "longReadingNotification";
+      Object.assign(notif.style, {
+        position: "fixed",
+        top: "10px",
+        right: "10px",
+        backgroundColor: "rgba(255,165,0,0.9)",
+        color: "#fff",
+        padding: "8px 12px",
+        borderRadius: "4px",
+        zIndex: "2100",
+        fontSize: "14px",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.3)"
+      });
+      notif.innerHTML = "You've been reading continuously for 30 sec.<br>Consider taking a break.";
+      document.body.appendChild(notif);
+      // Remove the notification after 5 seconds.
+      setTimeout(() => {
+        if (notif) notif.remove();
+      }, 5000);
+    }
+  }
+  
+  // Starts an interval that updates the continuous active reading counter every second.
+  function startReadNowInterval() {
+    return setInterval(() => {
+      readNowSeconds++;
+      // Every 30 seconds, show a notification and reset the counter.
+      if (readNowSeconds >= 30) {
+        showLongReadingNotification();
+        readNowSeconds = 0;
+      }
+    }, 1000);
+  }
+  
+  // Starts the interval that checks active reading time and updates Firestore.
+  function startTracking() {
+    clearInterval(trackingInterval);
+    // Start the continuous active counter.
+    readNowInterval = startReadNowInterval();
+    trackingInterval = setInterval(async () => {
+      const computedStyle = window.getComputedStyle(reader);
+      if (computedStyle.display === "none") {
+        stopTracking();
+        return;
+      }
+      
+      const now = Date.now();
+      const activeTimeMs = now - activeStart;
+      console.log(`Active Time: ${(activeTimeMs / 1000).toFixed(2)} sec`);
+      
+      // If at least 1 minute of active reading has passed.
+      if (activeTimeMs >= 60000) {
+        const hoursToAdd = activeTimeMs / (1000 * 60 * 60); // Convert ms to hours
+        const currentMonday = getLastMonday();
+        console.log("Current Monday:", currentMonday.getTime(), "Stored weekStart:", weekStart.getTime());
+        if (currentMonday.getTime() !== weekStart.getTime()) {
+          thisWeekRead = 0;  // Reset weekly reading
+          weekStart = currentMonday;
+        }
+        
+        try {
+          const docRef = doc(db, "User", userId, "BookShelf", bookId);
+          await setDoc(docRef, {
+            totalRead: totalRead + hoursToAdd,
+            thisWeekRead: thisWeekRead + hoursToAdd,
+            weekStart: weekStart
+          }, { merge: true });
+          console.log(`Added ${hoursToAdd.toFixed(2)} hours to reading time.`);
+          totalRead += hoursToAdd;
+          thisWeekRead += hoursToAdd;
+          updateUI();
+        } catch (error) {
+          console.error("Error updating reading time:", error);
+        }
+        activeStart = Date.now();
+      }
+    }, 60000); // Check every 1 minute.
+  }
+  
+  // Stops the tracking process and clears the continuous reading counter.
+  function stopTracking() {
+    clearInterval(trackingInterval);
+    clearTimeout(inactivityTimeout);
+    clearInterval(readNowInterval);
+    console.log("Reading tracking stopped.");
+    readNowSeconds = 0;
+  }
+  
+ 
+  window.addEventListener("mousemove", onActivity);
+  window.addEventListener("keydown", onActivity);
+  window.addEventListener("click", onActivity);
+  
+  startTracking();
+  onActivity();
+}
+
+// Get the last Monday's date (Monday is the start of the week)
+function getLastMonday() {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday.
+  return new Date(now.setDate(diff));
+}
+
   
   
 // Firebase-dependent: Add the current book to the user's bookshelf in Firestore.
@@ -329,7 +531,8 @@ async function addToShelf(book) {
         ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
         : "./imgs/default_cover.png",
       totalRead: 0,      // Initial total read time (in seconds)
-      thisWeekRead: 0    // Initial this-week read (in seconds)
+      thisWeekRead: 0,    // Initial this-week read (in seconds)
+      lastMondayStored: getLastMonday(),
     };
   
     // Use book.key as the document ID (ensuring it's a valid string).
@@ -371,6 +574,21 @@ async function addToShelf(book) {
       console.error("Error removing book from shelf:", error.message);
       showAlert("Error removing book from shelf.", "#f44336", 3);
     }
-  }
+  } 
+  // ---------- Bookshelf/leaderbroad ----------
   
-  
+  // ---------- Utility Functions & Global Exposure ----------
+
+
+const Myfunction = {
+  login,
+  register,
+  logout,
+  checkUserStatus,
+  showBookActionWindow
+};
+
+window.Myfunction = Myfunction;
+window.onload = () => {
+  checkUserStatus();
+};

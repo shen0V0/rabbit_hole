@@ -19,15 +19,25 @@ const togglePopup = () => {
 const togglereader = () => {
   const reader = document.getElementById('reader');
   const overlay = document.getElementById('overlay');
-  const book_window=document.getElementById("bookActionWindow");
+  const book_window = document.getElementById("bookActionWindow");
+  
+  let layer = document.getElementById("trackingLayer");
+
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.id = "trackingLayer"; // Give it an ID so we can remove it later
+    layer.className = "invisible-layer";
+    document.body.appendChild(layer);
+  }
+
   if (reader && overlay) {
     const isVisible = reader.style.display === 'block';
     reader.style.display = isVisible ? 'none' : 'block';
     overlay.style.display = isVisible ? 'none' : 'block';
     book_window.style.display = isVisible ? 'none' : 'block';
   }
-
 };
+
 
 // --- Book Functions & Pagination ---
 let books = [];

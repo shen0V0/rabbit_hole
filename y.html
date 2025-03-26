@@ -1,215 +1,545 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Book Search with Preview Filter</title>
-  <style>
-    /* Basic styles for layout and clarity */
-    .book { display: flex; margin-bottom: 1rem; }
-    .book img { margin-right: 1rem; }
-    .book-info { max-width: 600px; }
-    .read-button, .navigation { margin-top: 0.5rem; }
-    #overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } 
+  from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, getDocs } 
+  from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyD9Bti6OGhX19OVbLn6n6t6uAaM_4V_jSY",
+  authDomain: "rabbit-hole-a0713.firebaseapp.com",
+  projectId: "rabbit-hole-a0713",
+  storageBucket: "rabbit-hole-a0713.firebasestorage.app",
+  messagingSenderId: "5363591807",
+  appId: "1:5363591807:web:ba1c15747a119cb383ed4a",
+  measurementId: "G-BLCWQGCX0Y"
+};
+
+
+
+// ---------- Firebase Initialization ----------
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ---------- User Authentication Status ----------
+function checkUserStatus() {
+  const userDiv = document.querySelector(".User");
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      session();
+      // Retrieve user profile once
+      const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
+      const profileSnap = await getDoc(profileRef);
+      const profileData = profileSnap.exists() ? profileSnap.data() : {};
+      const username = profileData.username || "User";
+      const usericon = profileData.icon || "./imgs/rabbit.png";
+      userDiv.innerHTML = `
+        <div class="user-info">
+          <img src="${usericon}" alt="User Icon">
+          <span class="username">${username}</span>
+          <button onclick="Myfunction.logout()">Logout</button>
+        </div>
+      `;
+    } else {
+      userDiv.innerHTML = `<button id="Login" onclick="Login()">Login</button>`;
     }
-    #reader {
-      display: none;
-      position: fixed;
-      top: 10%; left: 10%;
-      width: 80%; height: 80%;
-      background: #fff;
-      padding: 1rem;
-      overflow: auto;
+  });
+}
+
+// ---------- Session Timer Functions ----------
+const session_length = 60 * 60 * 1000; // 1 hour
+const noti_time = 10 * 60 * 1000;        // 10 minutes warning
+
+let sessionTimer, notiTimer, countdownInterval;
+
+function session() {
+  resettimer();
+  // Listen for user activity to reset timers
+  document.addEventListener("mousemove", resettimer);
+  document.addEventListener("click", resettimer);
+  document.addEventListener("keydown", resettimer);
+}
+
+function resettimer() {
+  if (sessionTimer) clearTimeout(sessionTimer);
+  if (notiTimer) clearTimeout(notiTimer);
+  if (countdownInterval) clearInterval(countdownInterval);
+  const warnDiv = document.getElementById("session-warning");
+  if (warnDiv) warnDiv.remove();
+
+  sessionTimer = setTimeout(() => {
+    logout("Logging out due to session expiration.");
+  }, session_length);
+
+  notiTimer = setTimeout(() => {
+    warning("Your session is going to end in ");
+  }, session_length - noti_time);
+}
+
+function warning(msg) {
+  let warnDiv = document.getElementById("session-warning");
+  if (!warnDiv) {
+    warnDiv = document.createElement("div");
+    warnDiv.id = "session-warning";
+    warnDiv.style.position = "fixed";
+    warnDiv.style.top = "90px";
+    warnDiv.style.right = "20px";
+    warnDiv.style.backgroundColor = "rgba(255, 0, 0, 0.8)";
+    warnDiv.style.color = "white";
+    warnDiv.style.padding = "15px";
+    warnDiv.style.borderRadius = "8px";
+    warnDiv.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
+    warnDiv.style.zIndex = "1000";
+    document.body.appendChild(warnDiv);
+  }
+
+  warnDiv.innerHTML = msg + "<span style='color:lightblue;' id='countdown'></span>";
+  let countdownTime = noti_time / 1000;
+  const countdownElem = document.getElementById("countdown");
+  countdownElem.textContent = formatTime(countdownTime);
+
+  countdownInterval = setInterval(() => {
+    countdownTime--;
+    if (countdownTime <= 0) {
+      clearInterval(countdownInterval);
+      warnDiv.innerHTML = "Session expired!";
+    } else {
+      countdownElem.textContent = formatTime(countdownTime);
     }
-  </style>
-</head>
-<body>
-  <!-- Overlay, Popup and Reader elements -->
-  <div id="overlay"></div>
-  <div id="hclPopup" style="display: none;">Popup Content</div>
-  <div id="reader"></div>
+  }, 1000);
+}
 
-  <!-- Search Form -->
-  <form id="searchForm">
-    <input type="text" id="query" placeholder="Search for books" required>
-    <button type="submit">Search</button>
-  </form>
+function formatTime(hours) {
+  const totalSeconds = Math.floor(hours * 3600); // Convert hours to seconds
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
 
-  <!-- Results & Navigation -->
-  <div id="results"></div>
-  <div id="navigation"></div>
-  <button id="prevPage">Prev</button>
-  <button id="nextPage">Next</button>
+  return `${h.toString().padStart(2, "0")}h ${m.toString().padStart(2, "0")}m ${s.toString().padStart(2, "0")}s`;
+}
 
-  <script>
-    // Toggle functions using getComputedStyle for more reliable results
-    function toggleDropdown(menuId) {
-      const dropdown = document.getElementById(menuId);
-      const display = window.getComputedStyle(dropdown).display;
-      dropdown.style.display = display === "block" ? "none" : "block";
+
+// ---------- Login Function ----------
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  if (!email) {
+    showAlert("Email cannot be empty");
+    return;
+  }
+  if (!password) {
+    showAlert("Password cannot be empty");
+    return;
+  }
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    showAlert("Login successful! Welcome back.");
+    const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
+    const profileSnap = await getDoc(profileRef);
+    if (profileSnap.exists()) {
+      const profileData = profileSnap.data();
+      const lastSignedIn = profileData.lastSignedIn;
+      if (lastSignedIn) {
+        const gapMs = Date.now() - lastSignedIn.toDate().getTime();
+        const gapDays = Math.floor(gapMs / (1000 * 60 * 60 * 24));
+        if (gapDays === 1) {
+          const newStreak = (profileData.streaks || 0) + 1;
+          await setDoc(profileRef, { streaks: newStreak }, { merge: true });
+          showAlert("Congratulations on your " + newStreak + " day streak of learning!", "orange", 10);
+        } else if (gapDays > 1) {
+          const currentStreak = profileData.streaks || 0;
+          await setDoc(profileRef, { streaks: 1 }, { merge: true });
+          showAlert("Oops, you lost your " + currentStreak + " day streak.", "orange", 10);
+        }
+      }
+    } else {
+      console.log("No such document!");
     }
-
-    function togglePopup() {
-      const popup = document.getElementById('hclPopup');
-      const overlay = document.getElementById('overlay');
-      const display = window.getComputedStyle(popup).display;
-      const isVisible = display === 'block';
-      popup.style.display = isVisible ? 'none' : 'block';
-      overlay.style.display = isVisible ? 'none' : 'block';
+    // Update lastSignedIn regardless of streak status
+    await setDoc(profileRef, { lastSignedIn: new Date() }, { merge: true });
+    closePopup();
+  } catch (error) {
+    console.error(error.message);
+    if (error.code === 'auth/wrong-password') {
+      showAlert("Invalid password. Please try again.");
+    } else if (error.code === 'auth/user-not-found') {
+      showAlert("No user found with this email. Please register.");
+    } else {
+      showAlert("Invalid username or password");
     }
+  }
+}
 
-    function togglereader() {
-      const popup = document.getElementById('reader');
-      const overlay = document.getElementById('overlay');
-      const display = window.getComputedStyle(popup).display;
-      const isVisible = display === 'block';
-      popup.style.display = isVisible ? 'none' : 'block';
-      overlay.style.display = isVisible ? 'none' : 'block';
+// ---------- Registration Function ----------
+async function register() {
+  const email = document.getElementById("email_r").value.trim();
+  const password = document.getElementById("password_r").value.trim();
+  const password_v = document.getElementById("password_v").value.trim();
+  const username = document.getElementById("username").value.trim();
+  if (!username) {
+    showAlert("Username cannot be empty");
+    return;
+  }
+  if (!email) {
+    showAlert("Email cannot be empty");
+    return;
+  }
+  if (!password) {
+    showAlert("Password cannot be empty");
+    return;
+  }
+  if (password.length < 6) {
+    showAlert("Password must be at least 6 characters long.");
+    return;
+  }
+  if (password !== password_v) {
+    showAlert("Passwords do not match. Please re-enter your password.");
+    return;
+  }
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    const userDocRef = doc(db, "User", user.uid);
+    const userData = {
+      username: username,
+      email: email,
+      scores: 0,
+      medals: null,
+      streaks: 1,
+      lastSignedIn: new Date(),
+      icon: null
+    };
+    await setDoc(userDocRef, {});
+    await setDoc(doc(collection(userDocRef, "UserInfo"), "Profile"), userData);
+    // Initialize empty collections (if needed)
+    await setDoc(doc(collection(userDocRef, "Game"),"Games"), {});
+    await setDoc(doc(collection(userDocRef, "BookShelf"),"Books"), {});
+    showAlert("Registration successful! Welcome to Rabbit Hole.");
+    closePopup();
+  } catch (error) {
+    console.error(error.message);
+    if (error.code === 'auth/email-already-in-use') {
+      showAlert("This email is already registered. Please try logging in or use another email.");
+    } else if (error.code === 'auth/invalid-email') {
+      showAlert("Invalid email format. Please enter a valid email.");
+    } else {
+      showAlert("Registration failed: " + error.message);
     }
+  }document.querySelector(".username").textContent = username;
 
-    // Book search and pagination variables
-    let books = [];
-    let currentPage = 0;
-    const booksPerPage = 10;
+}
 
-    function clearReader() {
-      document.getElementById("reader").innerHTML = "";
+// ---------- Logout Function ----------
+function logout(msg) {
+  signOut(auth)
+    .then(() => {
+      if (msg) {
+        alert(msg);
+      } else {
+        showAlert("Logged out, see you later.");
+      }
+    })
+    .catch(error => {
+      console.error("Error logging out:", error.message);
+    });
+}
+
+// ---------- Book reading window ----------
+
+async function showBookActionWindow(book) {
+  let floatingDiv = document.getElementById("bookActionWindow");
+  if (!floatingDiv) {
+    floatingDiv = document.createElement("div");
+    floatingDiv.id = "bookActionWindow";
+    Object.assign(floatingDiv.style, {
+      position: "fixed",
+      top: "5px",
+      right: "5px",
+      backgroundColor: "#fff",
+      border: "1px solid #ccc",
+      padding: "10px",
+      boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+      zIndex: "2000"
+    });
+    document.body.appendChild(floatingDiv);
+  }
+  
+  const user = auth.currentUser;
+  if (!user) {
+    floatingDiv.innerHTML = `<button onclick="Login()">Sign in to add to shelf</button>`;
+    showBookActionWindow(book);
+    return;
+  }
+
+  const bookId = book.ia?.[0];
+  if (!bookId) {
+    console.error("Book ID is missing.");
+    showAlert("Error: Book data is incomplete.", "#f44336", 3);
+    return;
+  }
+  
+  console.log("Checking book ID:", bookId);
+
+  const docRef = doc(db, "User", user.uid, "BookShelf", bookId);
+  const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
+  let exists = false;
+  let totalRead = 0;
+  let thisWeekRead = 0;
+  let lastMondayStored = null;
+
+  try {
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      exists = true;
+      const bookData = docSnap.data();
+      totalRead = bookData.totalRead || 0;
+      thisWeekRead = bookData.thisWeekRead || 0;
+      lastMondayStored = bookData.weekStart ? new Date(bookData.weekStart.toDate()) : getLastMonday();
     }
+  } catch (error) {
+    console.error("Error checking bookshelf:", error);
+  }
 
-    // Render the list of books and apply preview filtering
-    function renderBooks() {
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = "";
-      const start = currentPage * booksPerPage;
-      const end = start + booksPerPage;
-      const paginatedBooks = books.slice(start, end);
+  // Get the current week's Monday
+  const currentMonday = getLastMonday();
+  const daysDifference = Math.floor((currentMonday - lastMondayStored) / (1000 * 60 * 60 * 24));
 
-      paginatedBooks.forEach(book => {
-        const div = document.createElement("div");
-        div.className = "book";
+  // Reset weekly reading if today’s Monday is different from stored Monday and the gap is ≥7 days
+  if (daysDifference >= 7) {
+    thisWeekRead = 0;
+    lastMondayStored = currentMonday;
+  }
 
-        // Set cover image or a placeholder if not available
-        const coverImg = document.createElement("img");
-        coverImg.src = book.cover_i 
-          ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` 
-          : "https://via.placeholder.com/100x150?text=No+Cover";
+  if (exists) {
+    const userinfo = await getDoc(profileRef);
+    const user = userinfo.data();
+    floatingDiv.innerHTML = `
+      <p>Signed in as ${user.username}</p>
+      <p><strong>Total Reading Time:</strong> ${totalRead.toFixed(2)} hours</p>
+      <p><strong>Reading Time This Week:</strong> ${thisWeekRead.toFixed(2)} hours</p>
+      <p id="activity-warning" style="color: red; display: none;">Inactive! Tracking paused.</p>
+      <button id="removeShelfButton">Delete from Bookshelf</button>
+    `;
+    document.getElementById("removeShelfButton").onclick = () => removeFromShelf(book);
+    trackReadingTime(user.uid, bookId, totalRead, thisWeekRead, lastMondayStored);
+  } else {
+    const username= doc(db, "User", user.uid, "UserInfo", "Profile").username;
+    floatingDiv.innerHTML = `
+      <p>Signed in as ${username}</p>
+      <button id="addShelfButton">Add to Bookshelf</button>
+    `;
+    document.getElementById("addShelfButton").onclick = () => addToShelf(book);
+  }
 
-        const infoDiv = document.createElement("div");
-        infoDiv.className = "book-info";
-        const title = book.title || "No Title";
-        const authors = book.author_name ? book.author_name.join(", ") : "Unknown Author";
-        infoDiv.innerHTML = `<h3>${title}</h3><p><strong>Author(s):</strong> ${authors}</p>`;
+  console.log("Book Details:", book);
+}
 
-        // Check if the book has Archive.org data
-        if (book.ia && book.ia.length > 0) {
-          if (book.has_fulltext) {
-            // Full text available: add a "Read" button
-            const readBtn = document.createElement("button");
-            readBtn.className = "read-button";
-            readBtn.textContent = "Read";
-            readBtn.addEventListener("click", function() {
-              togglereader();
-              const iaId = book.ia[0];
-              const embedUrl = `https://archive.org/embed/${iaId}?ui=embed`;
-              document.getElementById("reader").innerHTML = `
-                <button class="close-button" onclick="togglereader()">Close</button>
-                <h2>Reading: ${title}</h2>
-                <iframe src="${embedUrl}" frameborder="0" allowfullscreen style="width:100%; height:80%;"></iframe>`;
-              document.getElementById("reader").scrollIntoView({ behavior: "smooth" });
-            });
-            infoDiv.appendChild(readBtn);
-          } else {
-            // Preview-only: show default message and link to details
-            const defaultMsg = document.createElement("p");
-            defaultMsg.textContent = "This book is available as a preview only.";
-            infoDiv.appendChild(defaultMsg);
-            const infoLink = document.createElement("a");
-            infoLink.href = `https://openlibrary.org${book.key}`;
-            infoLink.target = "_blank";
-            infoLink.textContent = "View Details";
-            infoDiv.appendChild(infoLink);
-          }
-        } else {
-          // No Archive.org data: simply show a "View Details" link
-          const infoLink = document.createElement("a");
-          infoLink.href = `https://openlibrary.org${book.key}`;
-          infoLink.target = "_blank";
-          infoLink.textContent = "View Details";
-          infoDiv.appendChild(infoLink);
+// Tracks reading time (active time only) and updates Firestore.
+function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
+  // activeStart holds the timestamp when the user became active.
+  let activeStart = Date.now();
+  // trackingInterval will periodically update reading time.
+  let trackingInterval;
+  // inactivityTimeout stops tracking if no activity occurs.
+  let inactivityTimeout;
+  let time_now=0;
+  let track = true;
+  const reader = document.getElementById("reader");
+ 
+  // Called whenever the user does something (mousemove, keydown, click)
+  function onActivity() {
+    const computedStyle = window.getComputedStyle(reader);
+    const warningElem = document.getElementById("activity-warning");
+
+    if (track) {
+      console.log("activity detected");
+      if (warningElem.style.display === "block") {
+        activeStart = Date.now();
+        startTracking();
+        // Hide the warning message if present.
+        if (warningElem) warningElem.style.display = "none";
+      }
+
+      // Reset inactivity timeout.
+      clearTimeout(inactivityTimeout);
+      inactivityTimeout = setTimeout(() => {
+        clearInterval(trackingInterval);
+        const warningElem = document.getElementById("activity-warning");
+        if (warningElem) {
+          warningElem.style.display = "block";
+        } 
+      }, 30000);
+
+      // If the reader is not visible, stop tracking.
+      if (computedStyle.display === "none") {
+        stopTracking();
+      }
+    }
+  }
+  function updateUI() {
+    const totalReadElement = document.getElementById("totalReadTime");
+    const thisWeekReadElement = document.getElementById("thisWeekReadTime");
+    if (totalReadElement && thisWeekReadElement) {
+      totalReadElement.innerText = `${totalRead.toFixed(2)} hours`;
+      thisWeekReadElement.innerText = `${thisWeekRead.toFixed(2)} hours`;
+      console.log("new total time:"+totalRead.toFixed(2)+"new weekly time")
+    }
+  }
+  // Starts the interval that checks active reading time.
+  function startTracking() {
+    clearInterval(trackingInterval);
+    trackingInterval = setInterval(async () => {
+      const computedStyle = window.getComputedStyle(reader);
+
+      // Stop tracking if the reader is not displayed.
+      if (computedStyle.display === "none") {
+        stopTracking();
+        return;
+      }
+
+      // Calculate the active time in milliseconds.
+      const now = Date.now();
+      const activeTimeMs = now - activeStart;
+      console.log(`Active Time: ${(activeTimeMs / 1000).toFixed(2)} sec`);
+      
+      // If the user has been active for at least 1 minute,
+      // convert that interval to hours and update Firestore.
+      if (activeTimeMs >= 60000) {
+        const hoursToAdd = activeTimeMs / (1000 * 60 * 60); // Convert ms to hours
+
+        // Before updating, check if a new week has started.
+        const currentMonday = getLastMonday();
+        if (currentMonday.getTime() !== weekStart.getTime()) {
+          console.log("reseted:"+currentMonday.getTime()+" "+weekStart.getTime());
+          thisWeekRead = 0;  // Reset weekly reading
+          weekStart = currentMonday;
         }
 
-        div.appendChild(coverImg);
-        div.appendChild(infoDiv);
-        resultsDiv.appendChild(div);
-      });
+        try {
+          const docRef = doc(db, "User", userId, "BookShelf", bookId);
+          await setDoc(docRef, {
+            totalRead: totalRead + hoursToAdd,
+            thisWeekRead: thisWeekRead + hoursToAdd,
+            weekStart: weekStart
+          }, { merge: true }
+        );
+          console.log(`Added ${hoursToAdd.toFixed(2)} hours to reading time.`);
+          // Update local totals.
+          totalRead += hoursToAdd;
+          thisWeekRead += hoursToAdd;
+        } catch (error) {
+          console.error("Error updating reading time:", error);
+        }
+        // Reset the active start time.
 
-      // Disable/enable pagination buttons based on current page
-      document.getElementById("prevPage").disabled = currentPage === 0;
-      document.getElementById("nextPage").disabled = end >= books.length;
+        activeStart = Date.now();
+      }       
+    }, 1000); // Check every 10 seconds.
+  }
+
+  // Stops the tracking process.
+  function stopTracking() {
+    clearInterval(trackingInterval);
+    clearTimeout(inactivityTimeout);
+    console.log("Reading tracking stopped.");
+    track = false;
+  }
+
+  // Attach activity event listeners.
+  window.addEventListener("mousemove", onActivity);
+  window.addEventListener("keydown", onActivity);
+  window.addEventListener("click", onActivity);
+
+  // Start tracking initially.
+  startTracking();
+
+  // Also set up the inactivity timeout.
+  onActivity();
+}
+
+
+// Get the last Monday's date
+function getLastMonday() {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday.
+  return new Date(now.setDate(diff));
+}
+
+  
+  
+// Firebase-dependent: Add the current book to the user's bookshelf in Firestore.
+async function addToShelf(book) {
+    const user = auth.currentUser;
+   
+    // Construct book data using the properties returned by the API.
+    const bookData = {
+      bookName: book.title || "No Title",
+      bookid: book.ia[0],
+      bookUrl: "https://archive.org/embed/${"+book.ia[0]+"}?ui=embed",
+      coverUrl: book.cover_i 
+        ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
+        : "./imgs/default_cover.png",
+      totalRead: 0,      // Initial total read time (in seconds)
+      thisWeekRead: 0,    // Initial this-week read (in seconds)
+      lastMondayStored: getLastMonday(),
+    };
+  
+    // Use book.key as the document ID (ensuring it's a valid string).
+    const bookId = book.ia[0];
+    if (!bookId) {
+      console.error("Book key is missing. Cannot add to shelf.");
+      showAlert("Error: Book data is incomplete.", "#f44336", 3);
+      return;
     }
-
-    // Listen for search form submissions
-    document.getElementById("searchForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      clearReader();
-      search();
-    });
-
-    // Search function to fetch book data from Open Library
-    function search() {
-      const query = document.getElementById("query").value;
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = "<p>Loading...</p>";
-
-      fetch("https://openlibrary.org/search.json?q=" + encodeURIComponent(query))
-        .then(response => response.json())
-        .then(data => {
-          books = data.docs || [];
-          currentPage = 0;
-          renderBooks();
-          renderPagination();
-        })
-        .catch(error => {
-          resultsDiv.innerHTML = "<p>Error retrieving results.</p>";
-          console.error("Error fetching data:", error);
-        });
+  
+    try {
+      await setDoc(doc(db, "User", user.uid, "BookShelf", bookId), bookData, { merge: true });
+      showAlert("Book added to your shelf!", "#4CAF50", 3);
+      showBookActionWindow(book);
+    } catch (error) {
+      console.error("Error adding to shelf:", error.message);
+      showAlert("Error adding book to shelf.", "#f44336", 3);
     }
-
-    // Render pagination buttons based on total results
-    function renderPagination() {
-      const navDiv = document.getElementById("navigation");
-      navDiv.innerHTML = "";
-      for (let x = 0; x < Math.ceil(books.length / booksPerPage); x++) {
-        const nav = document.createElement("button");
-        nav.className = "navigation";
-        nav.textContent = x + 1;
-        nav.value = x;
-        nav.addEventListener("click", function() {
-          currentPage = parseInt(this.value);
-          renderBooks();
-        });
-        navDiv.appendChild(nav);
-      }
+  }
+    
+  // Firebase-dependent: Remove the current book from the user's bookshelf in Firestore.
+  async function removeFromShelf(book) {
+    const user = auth.currentUser;
+    if (!user) {
+      promptSignIn();
+      return;
     }
+    const bookId = book.ia[0];
+    if (!bookId) {
+      console.error("Book key is missing. Cannot remove from shelf.");
+      showAlert("Error: Book data is incomplete.", "#f44336", 3);
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, "User", user.uid, "BookShelf", bookId));
+      showAlert("Book removed from your shelf.", "#4CAF50", 3);
+      showBookActionWindow(book);
+    } catch (error) {
+      console.error("Error removing book from shelf:", error.message);
+      showAlert("Error removing book from shelf.", "#f44336", 3);
+    }
+  }
+  
+  // ---------- Utility Functions & Global Exposure ----------
 
-    // Previous/Next button event listeners
-    document.getElementById("prevPage").addEventListener("click", function() {
-      if (currentPage > 0) {
-        currentPage--;
-        renderBooks();
-      }
-    });
 
-    document.getElementById("nextPage").addEventListener("click", function() {
-      if ((currentPage + 1) * booksPerPage < books.length) {
-        currentPage++;
-        renderBooks();
-      }
-    });
-  </script>
-</body>
-</html>
+const Myfunction = {
+  login,
+  register,
+  logout,
+  checkUserStatus,
+  showBookActionWindow
+};
+
+window.Myfunction = Myfunction;
+window.onload = () => {
+  checkUserStatus();
+};
