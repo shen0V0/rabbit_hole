@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } 
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,updatePassword  } 
   from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, getDocs } 
   from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
@@ -26,7 +26,11 @@ const db = getFirestore(app);
 function checkUserStatus() {
   const userDiv = document.querySelector(".User");
   onAuthStateChanged(auth, async (user) => {
+
     if (user) {
+     if(document.getElementById("icon")){
+      loadUserInfo();
+     }
       session();
       // Retrieve user profile once
       const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
@@ -36,14 +40,19 @@ function checkUserStatus() {
       const usericon = profileData.icon || "./imgs/rabbit.png";
       userDiv.innerHTML = `
         <div class="user-info">
-          <img src="${usericon}" alt="User Icon">
-          <span class="username">${username}</span>
+         <a href="user.html">
+            <img src="${usericon}" alt="User Icon">
+            </a>
+            <a href="user.html" class="user-link">
+            <span class="username">${username}</span>
+            </a>
           <button onclick="Myfunction.logout()">Logout</button>
         </div>
-      `;
+      `; document.querySelector(".user-link").style.textDecoration = "none";
+      document.querySelector(".user-link").style.color = "inherit";
     } else {
       userDiv.innerHTML = `<button id="Login" onclick="Login()">Login</button>`;
-    }
+    }Check();
   });
 }
 
@@ -273,7 +282,7 @@ async function showBookActionWindow(book) {
     return;
   }
 
-  const bookId = book.ia?.[0];
+  const bookId = book.bookid || (book.ia ? book.ia[0] : undefined);
   if (!bookId) {
     console.error("Book ID is missing.");
     showAlert("Error: Book data is incomplete.", "#f44336", 3);
@@ -346,8 +355,11 @@ async function showBookActionWindow(book) {
   console.log("Book Details:", book);
 }
 
-// Tracks reading time (active time only) and updates Firestore.
-// Tracks reading time (active time only) and updates Firestore.
+let trackingInterval;
+let inactivityTimeout;
+let readNowSeconds = 0;
+let readNowInterval;
+let track = true;
 function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
   if (!userId || !bookId) {
     console.error("Missing userId or bookId");
@@ -355,15 +367,8 @@ function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
   }
   
   let activeStart = Date.now();
-  let trackingInterval;
-  let inactivityTimeout;
-  
-  // Variables for continuous active reading tracking.
-  let readNowSeconds = 0;
-  let readNowInterval;
-  
   const reader = document.getElementById("reader");
-  let track = true;
+
   
   // Called whenever an activity event occurs.
   function onActivity() {
@@ -372,8 +377,9 @@ function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
     }
     const computedStyle = window.getComputedStyle(reader);
     const warningElem = document.getElementById("activity-warning");
-    
+  
     if (track) {
+  
       // If a warning is shown, resume tracking.
       if (warningElem && warningElem.style.display === "block") {
         activeStart = Date.now();
@@ -387,13 +393,12 @@ function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
         clearInterval(readNowInterval);
         if (warningElem) {
           warningElem.style.display = "block";
+          console.log("inactivity detected");
         }
-      }, 30000);
+      }, 20000);
       
       // Stop tracking if the reader is not visible.
-      if (computedStyle.display === "none") {
-        stopTracking();
-      }
+
     }
   }
   
@@ -434,8 +439,17 @@ function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
   }
   
   // Starts an interval that updates the continuous active reading counter every second.
-  function startReadNowInterval() {
-    return setInterval(() => {
+ 
+  
+  // Starts the interval that checks active reading time and updates Firestore.
+  function startTracking() {
+
+    stopTracking();
+    track=true;
+    readNowInterval = setInterval(async() => {
+      if (!reader || window.getComputedStyle(reader).display !== "block") {
+        return; // Do nothing if reader is hidden.
+      }
       readNowSeconds++;
       // Every 30 seconds, show a notification and reset the counter.
       if (readNowSeconds >= 30) {
@@ -443,13 +457,6 @@ function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
         readNowSeconds = 0;
       }
     }, 1000);
-  }
-  
-  // Starts the interval that checks active reading time and updates Firestore.
-  function startTracking() {
-    clearInterval(trackingInterval);
-    // Start the continuous active counter.
-    readNowInterval = startReadNowInterval();
     trackingInterval = setInterval(async () => {
       const computedStyle = window.getComputedStyle(reader);
       if (computedStyle.display === "none") {
@@ -492,11 +499,21 @@ function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
   
   // Stops the tracking process and clears the continuous reading counter.
   function stopTracking() {
-    clearInterval(trackingInterval);
-    clearTimeout(inactivityTimeout);
-    clearInterval(readNowInterval);
-    console.log("Reading tracking stopped.");
+    if (trackingInterval !== null) {
+      clearInterval(trackingInterval);
+      trackingInterval = null;
+    }
+    if (readNowInterval !== null) {
+      clearInterval(readNowInterval);
+      readNowInterval = null;
+    }
+    if (inactivityTimeout !== null) {
+      clearTimeout(inactivityTimeout);
+      inactivityTimeout = null;
+    }
+    track = false;
     readNowSeconds = 0;
+    console.log("Reading tracking stopped.");
   }
   
  
@@ -576,6 +593,484 @@ async function addToShelf(book) {
     }
   } 
   // ---------- Bookshelf/leaderbroad ----------
+// ---------- Bookshelf/leaderbroad ----------
+  // Toggle between Leaderboard and Bookshelf views in the right box.
+// Use "leaderboard" as the initial state.
+var BS_LB = "leaderboard";
+
+// Check if the user is signed in and display the appropriate right box.
+async function Check() {
+  const user = auth.currentUser;
+  const rightbox = document.querySelector(".leaderboard");
+
+  if (user) {
+    // Create a toggle button with absolute positioning on the top left of rightbox.
+    // Use the event parameter to capture the button
+  
+
+    // Append the toggle button to rightbox and set rightbox initial content as leaderboard.
+    rightbox.innerHTML=`
+    <button id="switch" onclick="Myfunction.toggleRightboxView()">Switch to Bookshelf</button>
+        <h3 style="margin-top: 0;">Time-based Leaderboard</h3>
+        <div class="leaderboard-section">
+          <h4>Weekly</h4>
+          <ul>
+            <li>1. Alice - 15h</li>
+            <li>2. Bob - 12h</li>
+            <li>3. Charlie - 10h</li>
+          </ul>
+        </div>
+        <div class="leaderboard-section">
+          <h4>Subtotal</h4>
+          <ul>
+            <li>1. Alice - 100h</li>
+            <li>2. Bob - 85h</li>
+            <li>3. Charlie - 75h</li>
+          </ul>
+        </div>
+        <h3>Score-based Leaderboard</h3>
+        <div class="leaderboard-section">
+          <h4>Weekly</h4>
+          <ul>
+            <li>1. Alice - 5000 pts</li>
+            <li>2. Bob - 4500 pts</li>
+            <li>3. Charlie - 4000 pts</li>
+          </ul>
+        </div>
+        <div class="leaderboard-section">
+          <h4>Subtotal</h4>
+          <ul>
+            <li>1. Alice - 50000 pts</li>
+            <li>2. Bob - 42000 pts</li>
+            <li>3. Charlie - 39000 pts</li>
+          </ul>
+        </div>
+    `;
+  } else {
+    // If no user is signed in, simply show the leaderboard.
+    rightbox.innerHTML = `
+        <h3>Time-based Leaderboard</h3>
+        <div class="leaderboard-section">
+          <h4>Weekly</h4>
+          <ul>
+            <li>1. Alice - 15h</li>
+            <li>2. Bob - 12h</li>
+            <li>3. Charlie - 10h</li>
+          </ul>
+        </div>
+        <div class="leaderboard-section">
+          <h4>Subtotal</h4>
+          <ul>
+            <li>1. Alice - 100h</li>
+            <li>2. Bob - 85h</li>
+            <li>3. Charlie - 75h</li>
+          </ul>
+        </div>
+        <h3>Score-based Leaderboard</h3>
+        <div class="leaderboard-section">
+          <h4>Weekly</h4>
+          <ul>
+            <li>1. Alice - 5000 pts</li>
+            <li>2. Bob - 4500 pts</li>
+            <li>3. Charlie - 4000 pts</li>
+          </ul>
+        </div>
+        <div class="leaderboard-section">
+          <h4>Subtotal</h4>
+          <ul>
+            <li>1. Alice - 50000 pts</li>
+            <li>2. Bob - 42000 pts</li>
+            <li>3. Charlie - 39000 pts</li>
+          </ul>
+        </div>
+    `;
+  }
+}
+
+// Toggle between the leaderboard view and the bookshelf view.
+async function toggleRightboxView() {
+  // Use the event target as the switchButton.
+  const rightbox = document.querySelector(".leaderboard");
+
+  if (BS_LB === "leaderboard") {
+    BS_LB = "bookshelf";
+  
+    const user = auth.currentUser;
+    if (!user) return; // In case the user is not signed in
+
+    // Fetch books from Firestore.
+    const userBookshelfRef = collection(db, "User", user.uid, "BookShelf");
+    const booksSnapshot = await getDocs(userBookshelfRef);
+    const books = [];
+    booksSnapshot.forEach(doc => {
+      const data = doc.data();
+      books.push({ id: doc.id, ...data });
+    });
+
+    const itemsPerPage = 10;
+    let currentPage = 1;
+
+    function renderBooksPage(page) {
+      // Clear rightbox but preserve the switch button.
+      rightbox.innerHTML = `<button id="switch" onclick="Myfunction.toggleRightboxView()">Switch to Leaderboard</button>`;
+      
+      const startIndex = (page - 1) * itemsPerPage;
+      const endIndex = Math.min(startIndex + itemsPerPage, books.length);
+    
+      // Loop over the paginated books.
+      for (let i = startIndex; i < endIndex; i++) {
+        const book = books[i];
+    
+        // Create a section for this individual book.
+        const section = document.createElement("div");
+        section.className = "leaderboard-section";
+        section.style.border = "1px solid #ccc";
+        section.style.padding = "10px";
+        section.style.marginBottom = "10px";
+    
+        // Create a flex container to hold the left and right parts.
+        const flexContainer = document.createElement("div");
+        flexContainer.style.display = "flex";
+        flexContainer.style.alignItems = "center";
+        flexContainer.style.gap="10px";
+        flexContainer.style.justifyContent = "space-between";
+    
+        // Left container: book name and read button (vertical stack).
+        const leftContainer = document.createElement("div");
+        leftContainer.style.display = "flex";
+        leftContainer.style.flexDirection = "column";
+        leftContainer.style.justifyContent = "center";
+        leftContainer.style.gap = "10px"; // spacing between name and button
+    
+        const bookName = document.createElement("span");
+        bookName.innerText = book.bookName || book.title || "No Title";
+        bookName.style.fontWeight = "bold";
+        bookName.style.fontSize = "1.1em";
+    
+        const readBtn = document.createElement("button");
+        readBtn.className = "read-button";
+        readBtn.textContent = "Read";
+        readBtn.addEventListener("click", () => {
+          Myfunction.showBookActionWindow(book);
+          togglereader();
+          const iaId = book.bookid || (book.ia ? book.ia[0] : undefined);
+          if (iaId) {
+            const embedUrl = `https://archive.org/embed/${iaId}?ui=embed`;
+            const readerDiv = document.getElementById("reader");
+            if (readerDiv) {
+              readerDiv.innerHTML = `
+                <button class="close-button" onclick="togglereader()">Close</button>
+                <h2>Reading: ${book.bookName || book.title}</h2>
+                <iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe>
+              `;
+              readerDiv.scrollIntoView({ behavior: "smooth" });
+            }
+          }
+        });
+    
+        leftContainer.appendChild(bookName);
+        leftContainer.appendChild(readBtn);
+    
+        // Right container: cover image.
+        const rightContainer = document.createElement("div");
+        const coverImg = document.createElement("img");
+        coverImg.src = book.coverUrl || "defaultCover.jpg";
+        coverImg.alt = book.bookName || book.title || "Book Cover";
+        coverImg.style.width = "100px"; // adjust as needed
+        coverImg.style.objectFit = "cover";
+        rightContainer.appendChild(coverImg);
+    
+        // Append the left and right containers to the flex container.
+        flexContainer.appendChild(rightContainer);
+        flexContainer.appendChild(leftContainer);
+    
+        // Append the flex container to the section.
+        section.appendChild(flexContainer);
+    
+        // Append the section to the rightbox.
+        rightbox.appendChild(section);
+      }
+    
+      // Add pagination controls if necessary.
+      if (books.length > itemsPerPage) {
+        const paginationDiv = document.createElement("div");
+        paginationDiv.className = "pagination";
+    
+        if (page > 1) {
+          const prevBtn = document.createElement("button");
+          prevBtn.innerText = "Previous";
+          prevBtn.addEventListener("click", () => renderBooksPage(page - 1));
+          paginationDiv.appendChild(prevBtn);
+        }
+    
+        if (endIndex < books.length) {
+          const nextBtn = document.createElement("button");
+          nextBtn.innerText = "Next";
+          nextBtn.addEventListener("click", () => renderBooksPage(page + 1));
+          paginationDiv.appendChild(nextBtn);
+        }
+    
+        rightbox.appendChild(paginationDiv);
+      }
+    }
+    
+    
+    renderBooksPage(currentPage);
+  } else {
+    // Switch back to leaderboard view.
+    BS_LB = "leaderboard";
+
+    rightbox.innerHTML =`
+    <button id="switch" onclick="Myfunction.toggleRightboxView()">Switch to Bookshelf</button>
+      <h3 style="margin-top: 0;">Time-based Leaderboard</h3>
+      <div class="leaderboard-section">
+        <h4>Weekly</h4>
+        <ul>
+          <li>1. Alice - 15h</li>
+          <li>2. Bob - 12h</li>
+          <li>3. Charlie - 10h</li>
+        </ul>
+      </div>
+      <div class="leaderboard-section">
+        <h4>Subtotal</h4>
+        <ul>
+          <li>1. Alice - 100h</li>
+          <li>2. Bob - 85h</li>
+          <li>3. Charlie - 75h</li>
+        </ul>
+      </div>
+      <h3>Score-based Leaderboard</h3>
+      <div class="leaderboard-section">
+        <h4>Weekly</h4>
+        <ul>
+          <li>1. Alice - 5000 pts</li>
+          <li>2. Bob - 4500 pts</li>
+          <li>3. Charlie - 4000 pts</li>
+        </ul>
+      </div>
+      <div class="leaderboard-section">
+        <h4>Subtotal</h4>
+        <ul>
+          <li>1. Alice - 50000 pts</li>
+          <li>2. Bob - 42000 pts</li>
+          <li>3. Charlie - 39000 pts</li>
+        </ul>
+      </div>
+    `;
+  }
+}
+async function loadUserInfo() {
+  const user = auth.currentUser;
+  if (!user)  return;
+  
+  const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
+  try {
+    const profileSnap = await getDoc(profileRef);
+    const profileData = profileSnap.exists() ? profileSnap.data() : {};
+    const username = profileData.username || "User";
+    const usericon = profileData.icon || "./imgs/rabbit.png";
+    // Update your user_info div.
+    document.getElementById("icon").innerHTML = `<img src="${usericon}" alt="User Icon" style="border: 1px black solid; width: 150px; border-radius: 50%;">`;
+    document.getElementById("username").innerText = username;
+    document.getElementById("username").style.fontSize="24px";
+    document.getElementById("username").style.margin="20px";
+
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    showAlert("Error fetching user profile.", "#f44336", 3);
+  }
+}
+
+function editprofile() {
+  const user = auth.currentUser;
+  if (!user) {
+    showAlert("Please sign in first.", "#f44336", 3);
+    return;
+  }
+  
+  const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
+  
+  // Fetch current profile data.
+  getDoc(profileRef)
+    .then((docSnap) => {
+      let profileData = {};
+      if (docSnap.exists()) {
+        profileData = docSnap.data();
+      }
+      const currentUsername = profileData.username || "";
+      const currentEmail = profileData.email || "";
+      const currentIcon = profileData.icon || "./imgs/rabbit.png";
+      
+      // Create an overlay modal.
+      const modal = document.createElement("div");
+      modal.id = "editProfileModal";
+      Object.assign(modal.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%",
+        backgroundColor: "rgba(0,0,0,0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: "3000"
+      });
+      
+      // Create a content container for the form.
+      const content = document.createElement("div");
+      Object.assign(content.style, {
+        backgroundColor: "#fff",
+        padding: "20px",
+        borderRadius: "8px",
+        width: "400px",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.3)"
+      });
+      
+      content.innerHTML = `
+        <h2>Edit Profile</h2>
+        <form id="editProfileForm">
+          <div style="margin-bottom:10px;">
+            <label for="editUsername">Username:</label><br>
+            <input type="text" id="editUsername" name="username" value="${currentUsername}" style="width: 100%; padding: 5px;">
+          </div>
+          <div style="margin-bottom:10px;">
+            <label for="editEmail">Email:</label><br>
+            <input type="email" id="editEmail" name="email" value="${currentEmail}" style="width: 100%; padding: 5px;">
+          </div>
+          <div style="margin-bottom:10px;">
+            <label for="editPassword">New Password:</label><br>
+            <input type="password" id="editPassword" name="password" value="" style="width: 100%; padding: 5px;">
+          </div>
+          <div style="margin-bottom:10px;">
+            <label for="editConfirmPassword">Confirm Password:</label><br>
+            <input type="password" id="editConfirmPassword" name="confirmPassword" value="" style="width: 100%; padding: 5px;">
+          </div>
+          <div style="margin-bottom:10px;">
+            <label for="editIcon">Icon (Image):</label><br>
+            <input type="file" id="editIcon" accept="image/*">
+            <br>
+            <img id="previewIcon" src="${currentIcon}" alt="Current Icon" style="width: 80px; margin-top: 10px;">
+          </div>
+          <div style="text-align: right;">
+            <button type="button" id="cancelEdit">Cancel</button>
+            <button type="submit">Save</button>
+          </div>
+        </form>
+      `;
+      
+      modal.appendChild(content);
+      document.body.appendChild(modal);
+      
+      // Preview new icon image.
+      document.getElementById("editIcon").addEventListener("change", function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(ev) {
+            document.getElementById("previewIcon").src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      
+      // Cancel button.
+      document.getElementById("cancelEdit").addEventListener("click", function() {
+        document.body.removeChild(modal);
+      });
+      
+      // Form submission.
+      document.getElementById("editProfileForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const newUsername = document.getElementById("editUsername").value.trim();
+        const newEmail = document.getElementById("editEmail").value.trim();
+        const newPassword = document.getElementById("editPassword").value;
+        const confirmPassword = document.getElementById("editConfirmPassword").value;
+        const newIcon = document.getElementById("previewIcon").src;
+        
+        
+        // Prepare updated data.
+        const updatedData = {
+          username: newUsername,
+          email: newEmail,
+          icon: newIcon
+        };
+        
+        try {
+          await setDoc(profileRef, updatedData, { merge: true });
+          showAlert("Profile updated successfully.", "#4CAF50", 3);
+          // Update the user_info section.
+          document.getElementById("icon").innerHTML = `<img src="${newIcon}" alt="User Icon" style="width:80px;">`;
+          document.getElementById("username").innerText = newUsername;
+          document.body.removeChild(modal);
+        } catch (error) {
+          console.error("Error updating profile:", error);
+          showAlert("Error updating profile.", "#f44336", 3);
+        } 
+        if(newPassword.length===0){
+
+        }
+        else if ( newPassword !== confirmPassword) {
+          showAlert("Passwords do not match.", "#f44336", 3);
+          return;
+        }else{
+          console.log(newPassword.length);
+          updateUserPassword(newPassword,confirmPassword);
+        }
+      });
+      
+    })
+    .catch((err) => {
+      console.error("Error fetching profile:", err);
+      showAlert("Error fetching profile.", "#f44336", 3);
+    });
+}
+async function updateUserPassword(newPassword, confirmPassword) {
+  const user = auth.currentUser;
+  if (!user) {
+    showAlert("You must be logged in to update your password.", "#f44336", 3);
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showAlert("Passwords do not match!", "#f44336", 3);
+    return;
+  }
+
+  try {
+    await updatePassword(user, newPassword);
+    showAlert("Password updated successfully!", "#4CAF50", 3);
+  } catch (error) {
+    if (error.code === "auth/requires-recent-login") {
+      showAlert("Please log in again before changing your password.", "#f44336", 3);
+    } else {
+      showAlert(`Error: ${error.message}`, "#f44336", 3);
+    }
+  }
+}
+async function loadProfileSummary() {
+  const user = auth.currentUser;
+  if (!user) return;
+  
+  // Assume you have functions to calculate total reading time from the bookshelf,
+  // and that the user profile contains a "streaks" attribute.
+  const totalReadingTime = await calculateTotalReadingTime(user.uid); // e.g., in hrs
+  const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
+  const profileSnap = await getDoc(profileRef);
+  const profileData = profileSnap.exists() ? profileSnap.data() : {};
+  const streaks = profileData.streaks || 0;
+  
+  // Update the UI elements
+  document.getElementById("totalReadingTime").innerText = totalReadingTime.toFixed(2) + " hrs";
+  document.getElementById("streaks").innerText = streaks + " days";
+  document.getElementById("gameScore").innerText = "0";
+}
+
+// Call loadProfileSummary when needed, for example on page load:
+document.addEventListener("DOMContentLoaded", loadProfileSummary);
+
+
+
   
   // ---------- Utility Functions & Global Exposure ----------
 
@@ -585,7 +1080,9 @@ const Myfunction = {
   register,
   logout,
   checkUserStatus,
-  showBookActionWindow
+  showBookActionWindow,
+  toggleRightboxView,
+  editprofile
 };
 
 window.Myfunction = Myfunction;

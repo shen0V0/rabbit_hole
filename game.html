@@ -22,7 +22,7 @@
             <span class="span2">Dig into learning</span>
         </a>
         <div class="dropdown">
-            <button class="dropdown-button">Games</button>
+            <button class="dropdown-button" onclick="window.location.href='./game_lib.html'">Games</button>
             <div class="dropdown-content" id="dropdownMenu1">
                 <a href="#option1">Option 1</a>
                 <a href="#option2">Option 2</a>
@@ -47,11 +47,24 @@
         <div id="hclPopup">
             <button class="close-button" onclick="togglePopup()">Close</button>
             <h2>What is Rabbit Hole?</h2>
-            <p>Welcome to Rabbit Hole, an online learning platform...</p>
+            <p>
+                Welcome to Rabbit Hole, an online learning platform designed to make education fun and engaging. We believe that learning shouldn't be boring-our platform integrates game-like experiences, allowing users to enjoy the process while tracking their progress in real-time.
+                <br>We hope every user can dive into the Rabbit Hole, exploring deeper into the vast world of knowledge, uncovering new insights, and making learning an exciting adventure.
+            </p>
             <h2>Who are we</h2>
-            <p>We are the White Rabbits...</p>
+            <p>
+                We are the White Rabbits, tirelessly digging the tunnels of curiosity, creating a maze of knowledge for wanderers who seek wisdom. Once you step into our Rabbit Hole, there's no turning back-only deeper exploration, endless discovery, and the thrill of learning. We set the traps not to ensnare, but to guide the curious, leading them through the winding paths of knowledge, unlocking new skills, and making learning an adventure worth diving into.
+            </p>
         </div>
         <div class="leftbox" style="flex:3; justify-content: center;">
+            <div id="scores" style=" padding: 15px;  background-color: #f9f9f9; margin: 5px 0;">
+                <h2 style="margin-top: 0; font-family: 'Arial', sans-serif;">Refairy-tale</h2>
+                <p style="font-size: 1.2em; margin: 5px 0;">
+                  <strong>Current Score:</strong> <span id="currentScore">0</span>
+                  <strong>Highest Score Achieved:</strong> <span id="highestScore">0</span>
+                </p>
+              </div>
+              
             <iframe 
             src="https://shen0v0.github.io/GDP_OP/www" 
             frameborder="0" 

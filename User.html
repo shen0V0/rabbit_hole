@@ -24,7 +24,7 @@
         <div class="dropdown">
             <button class="dropdown-button" onclick="window.location.href='./game_lib.html'">Games</button>
             <div class="dropdown-content" id="dropdownMenu1">
-                <a href="#option1">Re_Fairy_Tale</a>
+                <a href="#option1">Option 1</a>
                 <a href="#option2">Option 2</a>
                 <a href="#option3">Option 3</a>
             </div>
@@ -57,15 +57,43 @@
             </p>
         </div>
         <div class="leftbox">
-            <div class="tabs" id="re_fairy_tale_img"><a href="game.html" class="game-tab-link" style="text-decoration: none; color: inherit;">
-                <img src="imgs/re_fairy_tale.png" alt="Fairy Tale Game"></a>
-                <a href="game.html" class="game-tab-link" style="text-decoration: none; color: inherit;"> <div class="game_detail" id="re_fairy_tale_detail"><h2>Re Fairy Tale</h2><br> Dive into the fantasy world of fairy tales</div></a></div>
-              <div class="tabs"><img src="imgs/dark_forest.png" alt="Mimir's game Game">
-                <div class="game_detail"><h2>Mimir's Forest</h2><br> A mystical forest where knowledge is your only weapon—only the wisest champions can conquer its depths and emerge victorious.</div></div>
-                <div class="tabs"><img src="imgs/sudoku.png" alt="sudoku Game">
-                <div class="game_detail"><h2>Sudoku</h2><br> A realm of numbers where logic reigns supreme—only those with sharp minds can unravel the grid and claim victory!</div></div>
-                <div class="tabs"><img src="imgs/true.png" alt="Chinese chess Game">
-                    <div class="game_detail"><h2>Chinese Chess</h2><br>A battlefield of strategy and wit—command your army with foresight and outmaneuver your opponent to seize the throne!</div></div>
+            <div id="user_info" style="display: flex;flex-direction: column;align-items: center;">
+                <div id="icon"></div>
+                <div id="username"></div>
+                <button onclick="Myfunction.editprofile()" style="width: 110px;height: 39px;border-radius: 10px;">Edit Profile</button>
+            </div>
+                        <div id="profile info"style="width:100%; height:100%; border:1px solid black;border-radius:30px; flex:3; padding: 10px;">
+                            <h2>Profile Summary</h2>
+                            <div class="profile-summary" style="display: flex; gap: 10px;">
+                              <!-- Total Reading Time -->
+                              <div class="profile-item" style="flex: 1 0.5 calc(50% - 10px); border: 1px solid #ccc; padding: 10px;">
+                                <h3>Total Reading Time</h3>
+                                <p id="totalReadingTime">0 hrs</p>
+                              </div>
+                              <!-- Streaks -->
+                              <div class="profile-item" style="flex: 1 0.5 calc(50% - 10px); border: 1px solid #ccc; padding: 10px;">
+                                <h3>Streaks</h3>
+                                <p id="streaks">0 days</p>
+                              </div>
+                              <!-- Total Game Score -->
+                              <div class="profile-item" style="flex: 1 0.5 calc(50% - 10px); border: 1px solid #ccc; padding: 10px;">
+                                <h3>Total Game Score</h3>
+                                <p id="gameScore">0</p>
+                              </div>
+                            </div>
+                            
+                            <h2>Achievement</h2>
+                            <div class="achievement-box" style="border: 1px solid #ccc; padding: 10px; min-height: 100px;">
+                              <!-- Placeholder for achievements -->
+                            </div>
+                            
+                            <h2>Badge</h2>
+                            <div class="badge-box" style="border: 1px solid #ccc; padding: 10px; min-height: 100px;">
+                              <!-- Placeholder for badges -->
+                            </div>
+                         
+                          </div>
+
         </div>
         <div class="rightbox">
             <div class="leaderboard">
