@@ -720,7 +720,8 @@ async function toggleRightboxView() {
       // Loop over the paginated books.
       for (let i = startIndex; i < endIndex; i++) {
         const book = books[i];
-    
+    if(books[i].bookName!=undefined){//check if this book have a book id
+
         // Create a section for this individual book.
         const section = document.createElement("div");
         section.className = "leaderboard-section";
@@ -774,7 +775,7 @@ async function toggleRightboxView() {
         // Right container: cover image.
         const rightContainer = document.createElement("div");
         const coverImg = document.createElement("img");
-        coverImg.src = book.coverUrl || "defaultCover.jpg";
+        coverImg.src = book.coverUrl || "/imgs/default_cover.png";
         coverImg.alt = book.bookName || book.title || "Book Cover";
         coverImg.style.width = "100px"; // adjust as needed
         coverImg.style.objectFit = "cover";
@@ -789,6 +790,7 @@ async function toggleRightboxView() {
     
         // Append the section to the rightbox.
         rightbox.appendChild(section);
+      }
       }
     
       // Add pagination controls if necessary.
