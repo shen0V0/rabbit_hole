@@ -26,8 +26,12 @@ const db = getFirestore(app);
 function checkUserStatus() {
   const userDiv = document.querySelector(".User");
   onAuthStateChanged(auth, async (user) => {
-
+   
     if (user) {
+      const currentPage = window.location.pathname.split("/").pop();
+      if (currentPage === "user.html") {
+        loadProfileSummary();
+      }
      if(document.getElementById("icon")){
       loadUserInfo();
      }
@@ -593,7 +597,6 @@ async function addToShelf(book) {
     }
   } 
   // ---------- Bookshelf/leaderbroad ----------
-// ---------- Bookshelf/leaderbroad ----------
   // Toggle between Leaderboard and Bookshelf views in the right box.
 // Use "leaderboard" as the initial state.
 var BS_LB = "leaderboard";
@@ -1050,10 +1053,26 @@ async function updateUserPassword(newPassword, confirmPassword) {
     }
   }
 }
+
+async function calculateTotalReadingTime(userId) {
+  const bookshelfRef = collection(db, "User", userId, "BookShelf");
+  const bookshelfSnap = await getDocs(bookshelfRef);
+  let totalReadingTime = 0;
+  bookshelfSnap.forEach(doc => {
+    const data = doc.data();
+    console.log("a"+ data.totalRead);
+    if (data.totalRead) {
+      totalReadingTime += data.totalRead; // assuming totalRead is in hours
+    }
+  });
+
+  return totalReadingTime;
+}
+
 async function loadProfileSummary() {
   const user = auth.currentUser;
   if (!user) return;
-  
+  console.log("loading")
   // Assume you have functions to calculate total reading time from the bookshelf,
   // and that the user profile contains a "streaks" attribute.
   const totalReadingTime = await calculateTotalReadingTime(user.uid); // e.g., in hrs
