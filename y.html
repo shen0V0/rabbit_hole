@@ -1,545 +1,246 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } 
-  from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, getDocs } 
-  from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyD9Bti6OGhX19OVbLn6n6t6uAaM_4V_jSY",
-  authDomain: "rabbit-hole-a0713.firebaseapp.com",
-  projectId: "rabbit-hole-a0713",
-  storageBucket: "rabbit-hole-a0713.firebasestorage.app",
-  messagingSenderId: "5363591807",
-  appId: "1:5363591807:web:ba1c15747a119cb383ed4a",
-  measurementId: "G-BLCWQGCX0Y"
-};
-
-
-
-// ---------- Firebase Initialization ----------
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// ---------- User Authentication Status ----------
-function checkUserStatus() {
-  const userDiv = document.querySelector(".User");
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      session();
-      // Retrieve user profile once
-      const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
-      const profileSnap = await getDoc(profileRef);
-      const profileData = profileSnap.exists() ? profileSnap.data() : {};
-      const username = profileData.username || "User";
-      const usericon = profileData.icon || "./imgs/rabbit.png";
-      userDiv.innerHTML = `
-        <div class="user-info">
-          <img src="${usericon}" alt="User Icon">
-          <span class="username">${username}</span>
-          <button onclick="Myfunction.logout()">Logout</button>
-        </div>
-      `;
-    } else {
-      userDiv.innerHTML = `<button id="Login" onclick="Login()">Login</button>`;
-    }
-  });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Game</title>
+    <style>
+       body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;     /* Center horizontally */
+    align-items: center;         /* Center vertically */
+    background-image: url('./imgs/Night.png');
+    background-size: cover;      /* Stretch to cover the screen */
+    background-position: center;
+    background-repeat: no-repeat;
+    text-align: center;
 }
 
-// ---------- Session Timer Functions ----------
-const session_length = 60 * 60 * 1000; // 1 hour
-const noti_time = 10 * 60 * 1000;        // 10 minutes warning
-
-let sessionTimer, notiTimer, countdownInterval;
-
-function session() {
-  resettimer();
-  // Listen for user activity to reset timers
-  document.addEventListener("mousemove", resettimer);
-  document.addEventListener("click", resettimer);
-  document.addEventListener("keydown", resettimer);
+/* Wrapper for all screens */
+.page {
+    display: none;
+    background: rgba(255, 255, 255, 0.85); /* Optional: white semi-transparent background for readability */
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    max-width: 600px;
+    width: 90%;
 }
 
-function resettimer() {
-  if (sessionTimer) clearTimeout(sessionTimer);
-  if (notiTimer) clearTimeout(notiTimer);
-  if (countdownInterval) clearInterval(countdownInterval);
-  const warnDiv = document.getElementById("session-warning");
-  if (warnDiv) warnDiv.remove();
-
-  sessionTimer = setTimeout(() => {
-    logout("Logging out due to session expiration.");
-  }, session_length);
-
-  notiTimer = setTimeout(() => {
-    warning("Your session is going to end in ");
-  }, session_length - noti_time);
+.active {
+    display: block;
 }
 
-function warning(msg) {
-  let warnDiv = document.getElementById("session-warning");
-  if (!warnDiv) {
-    warnDiv = document.createElement("div");
-    warnDiv.id = "session-warning";
-    warnDiv.style.position = "fixed";
-    warnDiv.style.top = "90px";
-    warnDiv.style.right = "20px";
-    warnDiv.style.backgroundColor = "rgba(255, 0, 0, 0.8)";
-    warnDiv.style.color = "white";
-    warnDiv.style.padding = "15px";
-    warnDiv.style.borderRadius = "8px";
-    warnDiv.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
-    warnDiv.style.zIndex = "1000";
-    document.body.appendChild(warnDiv);
-  }
-
-  warnDiv.innerHTML = msg + "<span style='color:lightblue;' id='countdown'></span>";
-  let countdownTime = noti_time / 1000;
-  const countdownElem = document.getElementById("countdown");
-  countdownElem.textContent = formatTime(countdownTime);
-
-  countdownInterval = setInterval(() => {
-    countdownTime--;
-    if (countdownTime <= 0) {
-      clearInterval(countdownInterval);
-      warnDiv.innerHTML = "Session expired!";
-    } else {
-      countdownElem.textContent = formatTime(countdownTime);
-    }
-  }, 1000);
+#question {
+    font-size: 20px;
+    margin: 20px 0;
 }
 
-function formatTime(hours) {
-  const totalSeconds = Math.floor(hours * 3600); // Convert hours to seconds
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-
-  return `${h.toString().padStart(2, "0")}h ${m.toString().padStart(2, "0")}m ${s.toString().padStart(2, "0")}s`;
+#answers {
+    margin-bottom: 20px;
 }
 
-
-// ---------- Login Function ----------
-async function login() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-  if (!email) {
-    showAlert("Email cannot be empty");
-    return;
-  }
-  if (!password) {
-    showAlert("Password cannot be empty");
-    return;
-  }
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    showAlert("Login successful! Welcome back.");
-    const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
-    const profileSnap = await getDoc(profileRef);
-    if (profileSnap.exists()) {
-      const profileData = profileSnap.data();
-      const lastSignedIn = profileData.lastSignedIn;
-      if (lastSignedIn) {
-        const gapMs = Date.now() - lastSignedIn.toDate().getTime();
-        const gapDays = Math.floor(gapMs / (1000 * 60 * 60 * 24));
-        if (gapDays === 1) {
-          const newStreak = (profileData.streaks || 0) + 1;
-          await setDoc(profileRef, { streaks: newStreak }, { merge: true });
-          showAlert("Congratulations on your " + newStreak + " day streak of learning!", "orange", 10);
-        } else if (gapDays > 1) {
-          const currentStreak = profileData.streaks || 0;
-          await setDoc(profileRef, { streaks: 1 }, { merge: true });
-          showAlert("Oops, you lost your " + currentStreak + " day streak.", "orange", 10);
-        }
-      }
-    } else {
-      console.log("No such document!");
-    }
-    // Update lastSignedIn regardless of streak status
-    await setDoc(profileRef, { lastSignedIn: new Date() }, { merge: true });
-    closePopup();
-  } catch (error) {
-    console.error(error.message);
-    if (error.code === 'auth/wrong-password') {
-      showAlert("Invalid password. Please try again.");
-    } else if (error.code === 'auth/user-not-found') {
-      showAlert("No user found with this email. Please register.");
-    } else {
-      showAlert("Invalid username or password");
-    }
-  }
+.answer-btn {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
 }
 
-// ---------- Registration Function ----------
-async function register() {
-  const email = document.getElementById("email_r").value.trim();
-  const password = document.getElementById("password_r").value.trim();
-  const password_v = document.getElementById("password_v").value.trim();
-  const username = document.getElementById("username").value.trim();
-  if (!username) {
-    showAlert("Username cannot be empty");
-    return;
-  }
-  if (!email) {
-    showAlert("Email cannot be empty");
-    return;
-  }
-  if (!password) {
-    showAlert("Password cannot be empty");
-    return;
-  }
-  if (password.length < 6) {
-    showAlert("Password must be at least 6 characters long.");
-    return;
-  }
-  if (password !== password_v) {
-    showAlert("Passwords do not match. Please re-enter your password.");
-    return;
-  }
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    const userDocRef = doc(db, "User", user.uid);
-    const userData = {
-      username: username,
-      email: email,
-      scores: 0,
-      medals: null,
-      streaks: 1,
-      lastSignedIn: new Date(),
-      icon: null
-    };
-    await setDoc(userDocRef, {});
-    await setDoc(doc(collection(userDocRef, "UserInfo"), "Profile"), userData);
-    // Initialize empty collections (if needed)
-    await setDoc(doc(collection(userDocRef, "Game"),"Games"), {});
-    await setDoc(doc(collection(userDocRef, "BookShelf"),"Books"), {});
-    showAlert("Registration successful! Welcome to Rabbit Hole.");
-    closePopup();
-  } catch (error) {
-    console.error(error.message);
-    if (error.code === 'auth/email-already-in-use') {
-      showAlert("This email is already registered. Please try logging in or use another email.");
-    } else if (error.code === 'auth/invalid-email') {
-      showAlert("Invalid email format. Please enter a valid email.");
-    } else {
-      showAlert("Registration failed: " + error.message);
-    }
-  }document.querySelector(".username").textContent = username;
-
+#score,
+#time-left {
+    font-size: 18px;
+    margin: 10px;
 }
 
-// ---------- Logout Function ----------
-function logout(msg) {
-  signOut(auth)
-    .then(() => {
-      if (msg) {
-        alert(msg);
-      } else {
-        showAlert("Logged out, see you later.");
-      }
-    })
-    .catch(error => {
-      console.error("Error logging out:", error.message);
-    });
+.button {
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
 }
 
-// ---------- Book reading window ----------
-
-async function showBookActionWindow(book) {
-  let floatingDiv = document.getElementById("bookActionWindow");
-  if (!floatingDiv) {
-    floatingDiv = document.createElement("div");
-    floatingDiv.id = "bookActionWindow";
-    Object.assign(floatingDiv.style, {
-      position: "fixed",
-      top: "5px",
-      right: "5px",
-      backgroundColor: "#fff",
-      border: "1px solid #ccc",
-      padding: "10px",
-      boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
-      zIndex: "2000"
-    });
-    document.body.appendChild(floatingDiv);
-  }
-  
-  const user = auth.currentUser;
-  if (!user) {
-    floatingDiv.innerHTML = `<button onclick="Login()">Sign in to add to shelf</button>`;
-    showBookActionWindow(book);
-    return;
-  }
-
-  const bookId = book.ia?.[0];
-  if (!bookId) {
-    console.error("Book ID is missing.");
-    showAlert("Error: Book data is incomplete.", "#f44336", 3);
-    return;
-  }
-  
-  console.log("Checking book ID:", bookId);
-
-  const docRef = doc(db, "User", user.uid, "BookShelf", bookId);
-  const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
-  let exists = false;
-  let totalRead = 0;
-  let thisWeekRead = 0;
-  let lastMondayStored = null;
-
-  try {
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      exists = true;
-      const bookData = docSnap.data();
-      totalRead = bookData.totalRead || 0;
-      thisWeekRead = bookData.thisWeekRead || 0;
-      lastMondayStored = bookData.weekStart ? new Date(bookData.weekStart.toDate()) : getLastMonday();
-    }
-  } catch (error) {
-    console.error("Error checking bookshelf:", error);
-  }
-
-  // Get the current week's Monday
-  const currentMonday = getLastMonday();
-  const daysDifference = Math.floor((currentMonday - lastMondayStored) / (1000 * 60 * 60 * 24));
-
-  // Reset weekly reading if today’s Monday is different from stored Monday and the gap is ≥7 days
-  if (daysDifference >= 7) {
-    thisWeekRead = 0;
-    lastMondayStored = currentMonday;
-  }
-
-  if (exists) {
-    const userinfo = await getDoc(profileRef);
-    const user = userinfo.data();
-    floatingDiv.innerHTML = `
-      <p>Signed in as ${user.username}</p>
-      <p><strong>Total Reading Time:</strong> ${totalRead.toFixed(2)} hours</p>
-      <p><strong>Reading Time This Week:</strong> ${thisWeekRead.toFixed(2)} hours</p>
-      <p id="activity-warning" style="color: red; display: none;">Inactive! Tracking paused.</p>
-      <button id="removeShelfButton">Delete from Bookshelf</button>
-    `;
-    document.getElementById("removeShelfButton").onclick = () => removeFromShelf(book);
-    trackReadingTime(user.uid, bookId, totalRead, thisWeekRead, lastMondayStored);
-  } else {
-    const username= doc(db, "User", user.uid, "UserInfo", "Profile").username;
-    floatingDiv.innerHTML = `
-      <p>Signed in as ${username}</p>
-      <button id="addShelfButton">Add to Bookshelf</button>
-    `;
-    document.getElementById("addShelfButton").onclick = () => addToShelf(book);
-  }
-
-  console.log("Book Details:", book);
+#cover h1,
+#result h1 {
+    font-size: 36px;
+    margin-bottom: 20px;
 }
 
-// Tracks reading time (active time only) and updates Firestore.
-function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
-  // activeStart holds the timestamp when the user became active.
-  let activeStart = Date.now();
-  // trackingInterval will periodically update reading time.
-  let trackingInterval;
-  // inactivityTimeout stops tracking if no activity occurs.
-  let inactivityTimeout;
-  let time_now=0;
-  let track = true;
-  const reader = document.getElementById("reader");
- 
-  // Called whenever the user does something (mousemove, keydown, click)
-  function onActivity() {
-    const computedStyle = window.getComputedStyle(reader);
-    const warningElem = document.getElementById("activity-warning");
+    </style>
+</head>
+<body>
 
-    if (track) {
-      console.log("activity detected");
-      if (warningElem.style.display === "block") {
-        activeStart = Date.now();
-        startTracking();
-        // Hide the warning message if present.
-        if (warningElem) warningElem.style.display = "none";
-      }
+    <!-- Cover Page -->
+    <div id="cover" class="page active">
+        <h1>Welcome to the Hans Christian Andersen Quiz</h1>
+        <button class="button" onclick="startGame()">Start Quiz</button>
+    </div>
 
-      // Reset inactivity timeout.
-      clearTimeout(inactivityTimeout);
-      inactivityTimeout = setTimeout(() => {
-        clearInterval(trackingInterval);
-        const warningElem = document.getElementById("activity-warning");
-        if (warningElem) {
-          warningElem.style.display = "block";
-        } 
-      }, 30000);
+    <!-- Quiz Page -->
+    <div id="quiz" class="page">
+        <div id="score">Score: 0</div>
+        <div id="time-left">Time Left: 10s</div>
+        <div id="question"></div>
+        <div id="answers"></div>
+    </div>
 
-      // If the reader is not visible, stop tracking.
-      if (computedStyle.display === "none") {
-        stopTracking();
-      }
-    }
-  }
-  function updateUI() {
-    const totalReadElement = document.getElementById("totalReadTime");
-    const thisWeekReadElement = document.getElementById("thisWeekReadTime");
-    if (totalReadElement && thisWeekReadElement) {
-      totalReadElement.innerText = `${totalRead.toFixed(2)} hours`;
-      thisWeekReadElement.innerText = `${thisWeekRead.toFixed(2)} hours`;
-      console.log("new total time:"+totalRead.toFixed(2)+"new weekly time")
-    }
-  }
-  // Starts the interval that checks active reading time.
-  function startTracking() {
-    clearInterval(trackingInterval);
-    trackingInterval = setInterval(async () => {
-      const computedStyle = window.getComputedStyle(reader);
+    <!-- Result Page -->
+    <div id="result" class="page">
+        <h1>Quiz Completed!</h1>
+        <div id="final-score"></div>
+        <button class="button" onclick="resetGame()">Play Again</button>
+    </div>
 
-      // Stop tracking if the reader is not displayed.
-      if (computedStyle.display === "none") {
-        stopTracking();
-        return;
-      }
+    <!-- Sound placeholders -->
+    <audio id="correct-sound" src="./aduio/Bell3.ogg"></audio> <!-- placeholder -->
+    <audio id="wrong-sound" src="./aduio/Buzzer1.ogg"></audio> <!-- placeholder -->
 
-      // Calculate the active time in milliseconds.
-      const now = Date.now();
-      const activeTimeMs = now - activeStart;
-      console.log(`Active Time: ${(activeTimeMs / 1000).toFixed(2)} sec`);
-      
-      // If the user has been active for at least 1 minute,
-      // convert that interval to hours and update Firestore.
-      if (activeTimeMs >= 60000) {
-        const hoursToAdd = activeTimeMs / (1000 * 60 * 60); // Convert ms to hours
+    <script>
+        const quizData = [
+            ["What is the main theme of 'The Little Mermaid'?", "To find love", ["To find love", "To defeat the sea witch", "To become human", "To rule the seas"]],
+            ["What is the name of the sea witch in 'The Little Mermaid'?", "Ursula", ["Ursula", "Ariel", "Flounder", "King Triton"]],
+            ["What happens to the Little Mermaid at the end of the story?", "She becomes foam on the sea", ["She becomes foam on the sea", "She marries the prince", "She lives happily ever after", "She becomes a sea witch"]],
+            ["In 'The Nightingale,' what is the emperor's reaction to the nightingale's song?", "He is moved to tears", ["He is moved to tears", "He is annoyed", "He orders the bird to be caged", "He falls asleep"]],
+            ["What does the nightingale sing to the emperor in 'The Nightingale'?", "A beautiful song", ["A beautiful song", "A sad melody", "A lullaby", "A battle cry"]],
+            ["In 'The Princess and the Pea,' what is used to test the princess's sensitivity?", "A pea", ["A pea", "A feather", "A golden coin", "A pillow"]],
+            ["What is the moral of 'The Ugly Duckling'?", "Beauty is found within", ["Beauty is found within", "Never judge by appearances", "Always be kind", "Strength is more important than beauty"]],
+            ["What animal is the main character in 'The Ugly Duckling'?", "A duckling", ["A duckling", "A swan", "A rabbit", "A cat"]],
+            ["In 'The Little Match Girl,' what is the girl's wish?", "To be warm and loved", ["To be warm and loved", "To have a rich family", "To meet the prince", "To have a new matchbox"]],
+            ["What is the ending of 'The Little Match Girl'?", "The girl dies, but is taken to heaven", ["The girl dies, but is taken to heaven", "She wakes up in a warm bed", "She becomes a princess", "She finds her family"]],
+            ["In 'The Red Shoes,' what happens to the girl who wears the shoes?", "She is forced to dance forever", ["She is forced to dance forever", "She becomes a famous dancer", "She dances in a ballet", "She finds true love"]],
+            ["In 'The Snow Queen,' what is the Snow Queen's goal?", "To freeze the entire world", ["To freeze the entire world", "To rule the world", "To capture Gerda's heart", "To become human"]],
+            ["What happens to the snowman in 'The Snowman'?", "He melts in the spring", ["He melts in the spring", "He comes to life", "He falls in love with a girl", "He becomes a spirit of winter"]],
+            ["What is the tin soldier's main obstacle in 'The Steadfast Tin Soldier'?", "His broken leg", ["His broken leg", "A giant dragon", "A jealous prince", "A dangerous mouse"]],
+            ["What do the storks do in 'The Storks'?", "Carry children", ["Carry children", "Help a king", "Bring good fortune", "Build nests"]],
+            ["What does the mother sacrifice in 'The Story of a Mother'?", "Her life", ["Her life", "Her health", "Her happiness", "Her love for her child"]],
+            ["What do the top and the ball symbolize in 'The Sweethearts; or, The Top and the Ball'?", "Love", ["Love", "Loyalty", "Friendship", "Competition"]],
+            ["What does the swineherd offer the princess in 'The Swineherd'?", "A beautiful music box", ["A beautiful music box", "A golden necklace", "A magical rose", "A golden pot"]],
+            ["What does the tallow candle represent in 'The Tallow Candle'?", "Self-sacrifice", ["Self-sacrifice", "Hope", "Humility", "Death"]],
+            ["What is the moral of 'The Teapot'?", "Contentment in small things", ["Contentment in small things", "Never trust appearances", "The value of hard work", "Don't judge others"]],
+            ["What happens to Thumbelina in the end?", "She marries a prince", ["She marries a prince", "She is transformed into a flower", "She becomes the queen of a kingdom", "She turns into a bird"]],
+            ["What magical item does the soldier find in 'The Tinderbox'?", "A magical tinderbox", ["A magical tinderbox", "A golden ring", "A flying carpet", "An enchanted lamp"]],
+            ["Who is the traveling companion in 'The Traveling Companion'?", "A mysterious beggar", ["A mysterious beggar", "A prince", "A soldier", "A ghost"]],
+            ["What does the ugly duckling transform into?", "A beautiful swan", ["A beautiful swan", "A rabbit", "A golden bird", "A butterfly"]],
+            ["What does the old man do that is considered 'always right' in 'What the Old Man Does is Always Right'?", "He makes wise decisions", ["He makes wise decisions", "He tells the truth", "He gives perfect advice", "He always helps others"]],
+            ["What does the Wicked Prince do in 'The Wicked Prince'?", "He locks the princess away", ["He locks the princess away", "He transforms into an animal", "He gives away his kingdom", "He curses his family"]],
+            ["What is the curse in 'The Wild Swans'?", "The swans are transformed into humans", ["The swans are transformed into humans", "The princess is turned into a swan", "The prince is cursed to live alone", "The kingdom is destroyed"]]
+        ];
 
-        // Before updating, check if a new week has started.
-        const currentMonday = getLastMonday();
-        if (currentMonday.getTime() !== weekStart.getTime()) {
-          console.log("reseted:"+currentMonday.getTime()+" "+weekStart.getTime());
-          thisWeekRead = 0;  // Reset weekly reading
-          weekStart = currentMonday;
+        let score = 0;
+        let currentQuestionIndex = 0;
+        let timeLeft = 10;
+        let questionTimer;
+        let randomQuestions = [];
+
+        function shuffleArray(array) {
+            return array.sort(() => Math.random() - 0.5);
         }
 
-        try {
-          const docRef = doc(db, "User", userId, "BookShelf", bookId);
-          await setDoc(docRef, {
-            totalRead: totalRead + hoursToAdd,
-            thisWeekRead: thisWeekRead + hoursToAdd,
-            weekStart: weekStart
-          }, { merge: true }
-        );
-          console.log(`Added ${hoursToAdd.toFixed(2)} hours to reading time.`);
-          // Update local totals.
-          totalRead += hoursToAdd;
-          thisWeekRead += hoursToAdd;
-        } catch (error) {
-          console.error("Error updating reading time:", error);
+let currentScore = 0;
+let highestScore = 0;
+
+function updateScore(newScore) {
+    currentScore = newScore;
+    window.parent.postMessage(
+        {
+            type: 'updateScore',
+            current: currentScore,
+        },
+        '*'
+    );
+    console.log(currentScore);
+}
+var answered= false;
+        function startGame() {
+
+            // Switch from cover to quiz screen
+            document.getElementById('cover').classList.remove('active');
+            document.getElementById('quiz').classList.add('active');
+
+            score = 0;
+            currentQuestionIndex = 0;
+            timeLeft = 10;
+            randomQuestions = shuffleArray(quizData).slice(0, 10);
+            document.getElementById('score').innerText = `Score: ${score}`;
+            document.getElementById('time-left').innerText = `Time Left: 10s`;
+
+            showQuestion();
+            startTimer();
         }
-        // Reset the active start time.
 
-        activeStart = Date.now();
-      }       
-    }, 1000); // Check every 10 seconds.
-  }
+        function showQuestion() {
+          answered=false;
+            const [questionText, correctAnswer, answers] = randomQuestions[currentQuestionIndex];
+            document.getElementById('question').innerText = questionText;
 
-  // Stops the tracking process.
-  function stopTracking() {
-    clearInterval(trackingInterval);
-    clearTimeout(inactivityTimeout);
-    console.log("Reading tracking stopped.");
-    track = false;
-  }
+            const answersDiv = document.getElementById('answers');
+            answersDiv.innerHTML = '';
+            answers.forEach(answer => {
+                const btn = document.createElement('button');
+                btn.classList.add('answer-btn');
+                btn.innerText = answer;
+                btn.onclick = () => checkAnswer(answer, correctAnswer);
+                answersDiv.appendChild(btn);
+            });
+        }
 
-  // Attach activity event listeners.
-  window.addEventListener("mousemove", onActivity);
-  window.addEventListener("keydown", onActivity);
-  window.addEventListener("click", onActivity);
+        function startTimer() {
+            timeLeft = 10;
+            document.getElementById('time-left').innerText = `Time Left: ${timeLeft}s`;
+            clearInterval(questionTimer);
+            questionTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('time-left').innerText = `Time Left: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(questionTimer);
+                    proceedToNextQuestion();
+                }
+            }, 1000);
+        }
 
-  // Start tracking initially.
-  startTracking();
+        function checkAnswer(selected, correct) {
+          if(answered){return}
+          answered = true;
+            clearInterval(questionTimer);
 
-  // Also set up the inactivity timeout.
-  onActivity();
-}
+            if (selected === correct) {
+                score += 100 - (10 * (10 - timeLeft)); // Time-based score
+                document.getElementById("correct-sound").play(); // Placeholder sound
+            } else {
+                document.getElementById("wrong-sound").play(); // Placeholder sound
+            }
 
+            document.getElementById('score').innerText = `Score: ${score}`;
+            updateScore(score);
+            // Wait 2 seconds before next question
+            setTimeout(() => {
+                proceedToNextQuestion();
+            }, 2000);
+        }
 
-// Get the last Monday's date
-function getLastMonday() {
-  const now = new Date();
-  const day = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday.
-  return new Date(now.setDate(diff));
-}
+        function proceedToNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < randomQuestions.length) {
+                showQuestion();
+                startTimer();
+            } else {
+                endGame();
+            }
+        }
 
-  
-  
-// Firebase-dependent: Add the current book to the user's bookshelf in Firestore.
-async function addToShelf(book) {
-    const user = auth.currentUser;
-   
-    // Construct book data using the properties returned by the API.
-    const bookData = {
-      bookName: book.title || "No Title",
-      bookid: book.ia[0],
-      bookUrl: "https://archive.org/embed/${"+book.ia[0]+"}?ui=embed",
-      coverUrl: book.cover_i 
-        ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
-        : "./imgs/default_cover.png",
-      totalRead: 0,      // Initial total read time (in seconds)
-      thisWeekRead: 0,    // Initial this-week read (in seconds)
-      lastMondayStored: getLastMonday(),
-    };
-  
-    // Use book.key as the document ID (ensuring it's a valid string).
-    const bookId = book.ia[0];
-    if (!bookId) {
-      console.error("Book key is missing. Cannot add to shelf.");
-      showAlert("Error: Book data is incomplete.", "#f44336", 3);
-      return;
-    }
-  
-    try {
-      await setDoc(doc(db, "User", user.uid, "BookShelf", bookId), bookData, { merge: true });
-      showAlert("Book added to your shelf!", "#4CAF50", 3);
-      showBookActionWindow(book);
-    } catch (error) {
-      console.error("Error adding to shelf:", error.message);
-      showAlert("Error adding book to shelf.", "#f44336", 3);
-    }
-  }
-    
-  // Firebase-dependent: Remove the current book from the user's bookshelf in Firestore.
-  async function removeFromShelf(book) {
-    const user = auth.currentUser;
-    if (!user) {
-      promptSignIn();
-      return;
-    }
-    const bookId = book.ia[0];
-    if (!bookId) {
-      console.error("Book key is missing. Cannot remove from shelf.");
-      showAlert("Error: Book data is incomplete.", "#f44336", 3);
-      return;
-    }
-    try {
-      await deleteDoc(doc(db, "User", user.uid, "BookShelf", bookId));
-      showAlert("Book removed from your shelf.", "#4CAF50", 3);
-      showBookActionWindow(book);
-    } catch (error) {
-      console.error("Error removing book from shelf:", error.message);
-      showAlert("Error removing book from shelf.", "#f44336", 3);
-    }
-  }
-  
-  // ---------- Utility Functions & Global Exposure ----------
+        function endGame() {
+            document.getElementById('quiz').classList.remove('active');
+            document.getElementById('result').classList.add('active');
+            document.getElementById('final-score').innerText = `Your final score is: ${score}`;
 
+        }
 
-const Myfunction = {
-  login,
-  register,
-  logout,
-  checkUserStatus,
-  showBookActionWindow
-};
-
-window.Myfunction = Myfunction;
-window.onload = () => {
-  checkUserStatus();
-};
+        function resetGame() {
+            document.getElementById('result').classList.remove('active');
+            document.getElementById('cover').classList.add('active');
+        }
+    </script>
+</body>
+</html>
