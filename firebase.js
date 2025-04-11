@@ -35,6 +35,9 @@ function checkUserStatus() {
      if(document.getElementById("icon")){
       loadUserInfo();
      }
+     if(currentPage ==="game.html"){
+      HS();
+     }
       session();
       // Retrieve user profile once
       const profileRef = doc(db, "User", user.uid, "UserInfo", "Profile");
@@ -1057,7 +1060,6 @@ async function calculateTotalReadingTime(userId) {
   let totalReadingTime = 0;
   bookshelfSnap.forEach(doc => {
     const data = doc.data();
-    console.log("a"+ data.totalRead);
     if (data.totalRead) {
       totalReadingTime += data.totalRead; // assuming totalRead is in hours
     }
@@ -1065,7 +1067,19 @@ async function calculateTotalReadingTime(userId) {
 
   return totalReadingTime;
 }
+async function calculateTotalscore(userId) {
+  const Gameref = collection(db, "User", userId, "Game");
+  const GameSnap = await getDocs(Gameref);
+  let totalscore = 0;
+  GameSnap.forEach(doc => {
+    const data = doc.data();
+    if (data.highestScore) {
+      totalscore += data.highestScore; // assuming totalRead is in hours
+    }
+  });
 
+  return totalscore;
+}
 async function loadProfileSummary() {
   const user = auth.currentUser;
   if (!user) return;
@@ -1077,16 +1091,87 @@ async function loadProfileSummary() {
   const profileSnap = await getDoc(profileRef);
   const profileData = profileSnap.exists() ? profileSnap.data() : {};
   const streaks = profileData.streaks || 0;
+  const Score =await calculateTotalscore(user.uid);
   
   // Update the UI elements
   document.getElementById("totalReadingTime").innerText = totalReadingTime.toFixed(2) + " hrs";
   document.getElementById("streaks").innerText = streaks + " days";
-  document.getElementById("gameScore").innerText = "0";
+  document.getElementById("gameScore").innerText = Score;
 }
 
 // Call loadProfileSummary when needed, for example on page load:
 document.addEventListener("DOMContentLoaded", loadProfileSummary);
 
+window.addEventListener('message', async function (event) {
+    if (event.data.type !== 'updateScore') return;
+    const gamename = document.getElementById('gamename')?.textContent;
+    const user = auth.currentUser;
+    if (!user || !user.uid || !gamename || typeof event.data.current !== 'number') {
+
+        return;
+    }
+
+    const gameDocRef = doc(db, "User", user.uid, "Game", gamename);
+    const gameDocSnap = await getDoc(gameDocRef);
+
+    const now = new Date().toISOString();
+
+    if (gameDocSnap.exists()) {
+        const data = gameDocSnap.data();
+        const previousHigh =getDoc(data.highestScore) || 0;
+
+        // Always update lastPlayed
+        await setDoc(gameDocRef, {
+            lastPlayed: now
+        },{ merge: true });
+
+        // If current score is higher than previous high score
+        if (event.data.current  > previousHigh) {
+            await setDoc(gameDocRef, {
+                highestScore: event.data.current 
+            },{ merge: true });
+
+            // Update HTML with new high score
+            document.getElementById('highestScore').textContent = event.data.current ;
+        } else {
+            // Update HTML with old high score
+            document.getElementById('highestScore').textContent = previousHigh;
+        }
+
+    } else {
+        // If the document doesn't exist, create it
+        await setDoc(gameDocRef, {
+            highestScore: event.data.current ,
+            lastPlayed: now
+        });
+
+        document.getElementById('highestScore').textContent = event.data.current ;
+    }
+
+    // Always update current score display
+    document.getElementById('currentScore').textContent = event.data.current ;
+});
+
+async function HS() {
+  const gamename = document.getElementById('gamename')?.textContent;
+  const user = auth.currentUser;
+
+  if (!gamename || !user) {
+    console.error("Missing game name or user not logged in.");
+    return;
+  }
+
+  const gameDocRef = doc(db, "User", user.uid, "Game", gamename);
+  const gameDocSnap = await getDoc(gameDocRef);
+
+  const data = gameDocSnap.exists() ? gameDocSnap.data() : null;
+  const previousHigh = data?.highestScore || 0;
+  console.log(previousHigh);
+  const HS = document.getElementById("highestScore");
+  if (HS) {
+    HS.innerHTML = previousHigh;
+  }
+}
 
 
   
@@ -1100,7 +1185,7 @@ const Myfunction = {
   checkUserStatus,
   showBookActionWindow,
   toggleRightboxView,
-  editprofile
+  editprofile,HS
 };
 
 window.Myfunction = Myfunction;
