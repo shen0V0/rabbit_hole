@@ -308,7 +308,7 @@ async function showBookActionWindow(book) {
       const bookData = docSnap.data();
       totalRead = bookData.totalRead || 0;
       thisWeekRead = bookData.thisWeekRead || 0;
-      lastMondayStored = bookData.weekStart ? new Date(bookData.weekStart.toDate()) : getLastMonday();
+      lastMondayStored = bookData.lastMondayStored ? new Date(bookData.lastMondayStored.toDate()) : getLastMonday();
     }
   } catch (error) {
     console.error("Error checking bookshelf:", error);
@@ -317,11 +317,14 @@ async function showBookActionWindow(book) {
   // Get the current week's Monday
   const currentMonday = getLastMonday();
   const daysDifference = Math.floor((currentMonday - lastMondayStored) / (1000 * 60 * 60 * 24));
-
+  console.log(currentMonday+" "+lastMondayStored+"="+daysDifference);
   // Reset weekly reading if today’s Monday is different from stored Monday and the gap is ≥7 days
   if (daysDifference >= 7) {
-    thisWeekRead = 0;
-    lastMondayStored = currentMonday;
+    await setDoc(docRef, {
+      thisWeekRead: 0,
+      lastMondayStored: currentMonday
+    }, { merge: true }); // merge: true preserves other fields
+    
   }
 
   if (exists) {
@@ -333,8 +336,8 @@ async function showBookActionWindow(book) {
     
     floatingDiv.innerHTML = `
     <p>Signed in as ${username}</p>
-    <p><strong>Total Reading Time:</strong> <span id="totalReadTime">${totalRead.toFixed(2)}</span> </p>
-    <p><strong>Reading Time This Week:</strong> <span id="thisWeekReadTime">${thisWeekRead.toFixed(2)}</span> </p>
+    <p><strong>Total Reading Time:</strong> <br><span id="totalReadTime">${totalRead.toFixed(2)}</span> </p>
+    <p><strong>Reading Time This Week:</strong> <br><span id="thisWeekReadTime">${thisWeekRead.toFixed(2)}</span> </p>
     <p id="activity-warning" style="color: red; display: none;">Inactive! Tracking paused.</p>
     <button id="removeShelfButton">Delete from Bookshelf</button>
   `;
@@ -475,12 +478,6 @@ function trackReadingTime(userId, bookId, totalRead, thisWeekRead, weekStart) {
       // If at least 1 minute of active reading has passed.
       if (activeTimeMs >= 60000) {
         const hoursToAdd = activeTimeMs / (1000 * 60 * 60); // Convert ms to hours
-        const currentMonday = getLastMonday();
-        console.log("Current Monday:", currentMonday.getTime(), "Stored weekStart:", weekStart.getTime());
-        if (currentMonday.getTime() !== weekStart.getTime()) {
-          thisWeekRead = 0;  // Reset weekly reading
-          weekStart = currentMonday;
-        }
         
         try {
           const docRef = doc(db, "User", userId, "BookShelf", bookId);
