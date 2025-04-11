@@ -1104,6 +1104,8 @@ document.addEventListener("DOMContentLoaded", loadProfileSummary);
 
 window.addEventListener('message', async function (event) {
     if (event.data.type !== 'updateScore') return;
+     // Always update current score display
+     document.getElementById('currentScore').textContent = event.data.current ;
     const gamename = document.getElementById('gamename')?.textContent;
     const user = auth.currentUser;
     if (!user || !user.uid || !gamename || typeof event.data.current !== 'number') {
@@ -1118,7 +1120,7 @@ window.addEventListener('message', async function (event) {
 
     if (gameDocSnap.exists()) {
         const data = gameDocSnap.data();
-        const previousHigh =getDoc(data.highestScore) || 0;
+        const previousHigh =data.highestScore || 0;
 
         // Always update lastPlayed
         await setDoc(gameDocRef, {
@@ -1148,8 +1150,7 @@ window.addEventListener('message', async function (event) {
         document.getElementById('highestScore').textContent = event.data.current ;
     }
 
-    // Always update current score display
-    document.getElementById('currentScore').textContent = event.data.current ;
+   
 });
 
 async function HS() {
