@@ -62,7 +62,7 @@ function checkUserStatus() {
 
 // ---------- Session Timer Functions ----------
 const session_length = 60 * 60 * 1000; // 1 hour
-const noti_time = 10 * 60 * 1000;        // 10 minutes warning
+const noti_time = 59 * 60 * 1000;        // 10 minutes warning
 
 let sessionTimer, notiTimer, countdownInterval;
 
@@ -124,12 +124,12 @@ function warning(msg) {
 }
 
 function formatTime(hours) {
-  const totalSeconds = Math.floor(hours * 3600); // Convert hours to seconds
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
+  const totalSeconds = Math.floor(hours ); // Convert hours to seconds
+
+  const m = Math.floor((totalSeconds) / 60);
   const s = totalSeconds % 60;
 
-  return `${h.toString().padStart(2, "0")}h ${m.toString().padStart(2, "0")}m ${s.toString().padStart(2, "0")}s`;
+  return `${m.toString().padStart(2, "0")}m ${s.toString().padStart(2, "0")}s`;
 }
 
 
