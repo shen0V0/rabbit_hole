@@ -41,6 +41,7 @@
     </div>
     <div class="container">
         <div id="overlay"></div>
+        <div id="reader"></div>
         <div id="hclPopup">
             <button class="close-button" onclick="togglePopup()">Close</button>
             <h2>What is Rabbit Hole?</h2>
@@ -54,12 +55,22 @@
             </p>
         </div>
         <div class="leftbox">
-            <div id="user_info" style="display: flex;flex-direction: column;align-items: center;">
+            <div id="user_info" style="display: flex;flex:2;flex-direction: column;align-items: center;">
                 <div id="icon"></div>
                 <div id="username"></div>
                 <button onclick="Myfunction.editprofile()" style="width: 110px;height: 39px;border-radius: 10px;">Edit Profile</button>
+                <div id="friendWidget" class="friend-widget">
+                    <h3>Friends</h3>
+                    <div class="friend-search-container">
+                      <input type="text" id="friendSearch" placeholder="Search users…" class="friend-search" />
+                      <button id="addFriendBtn" class="button">Add</button>
+                    </div>
+                    <ul id="friendList" class="friend-list"></ul>
+                    <p id="noFriendsMsg" class="empty-msg">You have no friends yet.</p>
+                  </div>
+                  
             </div>
-                        <div id="profile info"style="width:100%; height:100%; border:1px solid black;border-radius:30px; flex:3; padding: 10px;">
+                        <div id="profile info"style="width:100%; height:100%; border:1px solid black;border-radius:30px; flex:8; padding: 10px;">
                             <h2>Profile Summary</h2>
                             <div class="profile-summary" style="display: flex; gap: 10px;">
                               <!-- Total Reading Time -->

@@ -56,27 +56,45 @@
             </p>
         </div>
         <div class="leftbox" style="flex:3; justify-content: center;">
-            <div id="scores" style=" padding: 15px;  background-color: #f9f9f9; margin: 5px 0;">
-                <h2 id="gamename"style="margin-top: 0; font-family: 'Arial', sans-serif;">Refairy-tale</h2>
+            <div id="scores" style="padding: 15px; background-color: #f9f9f9; margin: 5px 0;">
+                <h2 id="gamename" style="margin-top: 0; font-family: 'Arial', sans-serif;">Refairy-tale</h2>
                 <p style="font-size: 1.2em; margin: 5px 0;">
-                  <strong>Current Score:</strong> <span id="currentScore">0</span>
-                  <strong>Highest Score Achieved:</strong> <span id="highestScore">0</span>
+                    <strong>Current Score:</strong> <span id="currentScore">0</span>
+                    <strong>Highest Score Achieved:</strong> <span id="highestScore">0</span>
                 </p>
-              </div>
-              
+            </div>
+        
             <iframe 
-            src="./y.html" 
-            frameborder="0" 
-            allowfullscreen 
-            
-            style="
-                position: relative; 
-                width: 1200px; 
-                height: 750px;
-                zoom: 0.7;
+    src="./y.html" 
+        frameborder="0" 
+        allowfullscreen 
+        style="
+            width: 950px;
+            height: 550px;
+            border: 4px solid #a3c4f3;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        ">
+    </iframe>
 
-            ">
-        </iframe>               </div>
+        
+            <!-- New Game Info and Related Books Section -->
+            <div id="gameInfoBooks" style="background-color: #fff; padding: 20px; margin-top: 15px; border: 1px solid #ccc; border-radius: 8px;width: 950px;">
+                <h3>About the Game</h3>
+                <p>
+                    "Refairy-tale" is an interactive game that transforms classic fairy tales into educational challenges. Solve riddles, complete word puzzles, and dive into storytelling mechanics designed to boost literacy and critical thinking.
+                </p>
+                
+                <div id="relatedBooks">
+                    <h3>Books Related to This Game</h3>
+                    <div id="relatedResults">
+                      <p>Loading…</p>
+                    </div>
+                  </div>
+            </div>
+        </div>
+        
         <div class="rightbox">
             <div class="leaderboard">
                 <h3>Time-based Leaderboard</h3>
@@ -118,3 +136,4 @@
     </div>
 </body>
 </html>
+

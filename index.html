@@ -40,8 +40,6 @@
         <div class="User"></div>
     </div>
     <div class="container">
-        <div id="overlay"></div>
-        <div id="reader"></div>
         <div id="hclPopup">
             <button class="close-button" onclick="togglePopup()">Close</button>
             <h2>What is Rabbit Hole?</h2>
@@ -54,17 +52,79 @@
                 We are the White Rabbits, tirelessly digging the tunnels of curiosity, creating a maze of knowledge for wanderers who seek wisdom. Once you step into our Rabbit Hole, there's no turning back-only deeper exploration, endless discovery, and the thrill of learning. We set the traps not to ensnare, but to guide the curious, leading them through the winding paths of knowledge, unlocking new skills, and making learning an adventure worth diving into.
             </p>
         </div>
+        <!-- Filters Toolbar -->
+        <div id="overlay"></div>
+        <div id="reader"></div>
+        <!-- Left Side: Grouped Game Sections -->
         <div class="leftbox">
-            <div class="tabs" id="re_fairy_tale_img"><a href="game.html" class="game-tab-link" style="text-decoration: none; color: inherit;">
-                <img src="imgs/re_fairy_tale.png" alt="Fairy Tale Game"></a>
-                <a href="game.html" class="game-tab-link" style="text-decoration: none; color: inherit;"> <div class="game_detail" id="re_fairy_tale_detail"><h2>Re Fairy Tale</h2><br> Dive into the fantasy world of fairy tales</div></a></div>
-              <div class="tabs"><img src="imgs/dark_forest.png" alt="Mimir's game Game">
-                <div class="game_detail"><h2>Mimir's Forest</h2><br> A mystical forest where knowledge is your only weapon—only the wisest champions can conquer its depths and emerge victorious.</div></div>
-                <div class="tabs"><img src="imgs/sudoku.png" alt="sudoku Game">
-                <div class="game_detail"><h2>Sudoku</h2><br> A realm of numbers where logic reigns supreme—only those with sharp minds can unravel the grid and claim victory!</div></div>
-                <div class="tabs"><img src="imgs/true.png" alt="Chinese chess Game">
-                    <div class="game_detail"><h2>Chinese Chess</h2><br>A battlefield of strategy and wit—command your army with foresight and outmaneuver your opponent to seize the throne!</div></div>
+            <h2>Popular Books Of The Week</h2>  
+            <section class="popular-books">
+                <div class="book">
+                <img src="imgs/book_hobbit.jpg" alt="The Hobbit">
+                <div class="book-info">
+                    <h3>The Hobbit</h3>
+                    <p>by J.R.R. Tolkien</p>
+                </div>
+                </div>
+                <div class="book">
+                <img src="imgs/book_pride.jpg" alt="Pride and Prejudice">
+                <div class="book-info">
+                    <h3>Pride and Prejudice</h3>
+                    <p>by Jane Austen</p>
+                </div>
+                </div>
+                <div class="book">
+                <img src="imgs/book_1984.jpg" alt="1984">
+                <div class="book-info">
+                    <h3>1984</h3>
+                    <p>by George Orwell</p>
+                </div>
+                </div>
+            </section>
+          
+          <section class="game-section" data-category="Story">
+            <h2>Story Games</h2>
+            <div class="game-card"  onclick="window.location.href='game.html';" style="cursor: pointer;">
+              <img src="imgs/re_fairy_tale.png" alt="Re Fairy Tale">
+              <div class="game-detail">
+                <h2>Re Fairy Tale</h2>
+                <p>Dive into the fantasy world of fairy tales—where every choice sparks magic, and classic stories unfold with unexpected twists and enchanted surprises.</p>
+              </div>
+            </div>
+            <div class="game-card">
+              <img src="imgs/dark_forest.png" alt="Mimir's Forest">
+              <div class="game-detail">
+                <h2>Mimir's Forest</h2>
+                <p>A mystical forest where knowledge is your only weapon—only the wisest champions can conquer its depths and emerge victorious.</p>
+              </div>
+            </div>
+          </section>
+    
+          <section class="game-section" data-category="Puzzle">
+            <h2>Puzzle Games</h2>
+            <div class="game-card">
+              <img src="imgs/sudoku.png" alt="Sudoku">
+              <div class="game-detail">
+                <h2>Sudoku</h2>
+                <p>A realm of numbers where logic reigns supreme—only those with sharp minds can unravel the grid and claim victory!</p>
+              </div>
+            </div>
+          </section>
+    
+          <section class="game-section" data-category="Strategy">
+            <h2>Strategy Games</h2>
+            <div class="game-card">
+              <img src="imgs/true.png" alt="Chinese Chess">
+              <div class="game-detail">
+                <h2>Chinese Chess</h2>
+                <p>A battlefield of strategy and wit—command your army with foresight and outmaneuver your opponent to seize the throne!</p>
+              </div>
+            </div>
+          </section>
+    
+          <!-- Popular Books Section -->
         </div>
+  
         <div class="rightbox">
             <div class="leaderboard">
                 <h3>Time-based Leaderboard</h3>

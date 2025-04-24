@@ -8,22 +8,16 @@
     <script type="module" src="firebase.js" defer></script>
     <script src="javascript.js" defer></script>
     <title>Rabbit Hole</title>
-<style> .tabs{
-      display: flex;
-      flex-direction: row;
-        flex: 1; 
-        box-sizing: border-box; 
-        width: 100%;
-        height:150px;
-        z-index: 2;
-    }.tabs img{
-        width: 20%;
-    }
-    .leftbox {
-    display: flex;
-    flex-direction: column; /* Stack the tabs vertically */
-    gap: 20px; /* Space between each tab */
-}</style>
+    <style>
+        .game-section {
+        display:flex;           /* space between cards */
+        flex-direction: column;
+        margin: 0;
+        }
+        .game-card{
+            max-width: 800px;
+        }
+    </style>
 </head>
 <body>
     <div class="Head">
@@ -70,21 +64,50 @@
             </p>
         </div>
         <div class="leftbox">
-            <a href="game.html" class="game-tab-link" style="text-decoration: none; color: inherit;height:fit-content;margin-bottom: 25px;">
-                <div class="tabs" id="re_fairy_tale_img" style="height:100%">
-                  <img src="imgs/re_fairy_tale.png" alt="Fairy Tale Game">
-                  <div class="game_detail" id="re_fairy_tale_detail">
-                    <h2>Re Fairy Tale</h2><br>
-                    Dive into the fantasy world of fairy tales
-                  </div>
-                </div>
-              </a>  <div class="tabs"><img src="imgs/dark_forest.png" alt="Mimir's game Game">
-                <div class="game_detail"><h2>Mimir's Forest</h2><br> A mystical forest where knowledge is your only weapon—only the wisest champions can conquer its depths and emerge victorious.</div></div>
-                <div class="tabs"><img src="imgs/sudoku.png" alt="sudoku Game">
-                <div class="game_detail"><h2>Sudoku</h2><br> A realm of numbers where logic reigns supreme—only those with sharp minds can unravel the grid and claim victory!</div></div>
-                <div class="tabs"><img src="imgs/true.png" alt="Chinese chess Game">
-                    <div class="game_detail"><h2>Chinese Chess</h2><br>A battlefield of strategy and wit—command your army with foresight and outmaneuver your opponent to seize the throne!</div></div>
-        </div>
+            <h2>Games</h2>
+            <div class="game-filters">
+                <button data-filter="All" class="active">All</button>
+                <button data-filter="Story">Story</button>
+                <button data-filter="Puzzle">Puzzle</button>
+                <button data-filter="Strategy">Strategy</button>
+              </div>
+          
+          <section class="game-section" data-category="Story">
+            <div class="game-card"  onclick="window.location.href='game.html';" style="cursor: pointer;">
+              <img src="imgs/re_fairy_tale.png" alt="Re Fairy Tale">
+              <div class="game-detail">
+                <h2>Re Fairy Tale</h2>
+                <p>Dive into the fantasy world of fairy tales—where every choice sparks magic, and classic stories unfold with unexpected twists and enchanted surprises.</p>
+              </div>
+            </div>
+            <div class="game-card">
+              <img src="imgs/dark_forest.png" alt="Mimir's Forest">
+              <div class="game-detail">
+                <h2>Mimir's Forest</h2>
+                <p>A mystical forest where knowledge is your only weapon—only the wisest champions can conquer its depths and emerge victorious.</p>
+              </div>
+            </div>
+          </section>
+    
+          <section class="game-section" data-category="Puzzle">
+            <div class="game-card">
+              <img src="imgs/sudoku.png" alt="Sudoku">
+              <div class="game-detail">
+                <h2>Sudoku</h2>
+                <p>A realm of numbers where logic reigns supreme—only those with sharp minds can unravel the grid and claim victory!</p>
+              </div>
+            </div>
+          </section>
+    
+          <section class="game-section" data-category="Strategy">
+            <div class="game-card">
+              <img src="imgs/true.png" alt="Chinese Chess">
+              <div class="game-detail">
+                <h2>Chinese Chess</h2>
+                <p>A battlefield of strategy and wit—command your army with foresight and outmaneuver your opponent to seize the throne!</p>
+              </div>
+            </div>
+          </section></div>
         <div class="rightbox">
             <div class="leaderboard">
                 <h3>Time-based Leaderboard</h3>

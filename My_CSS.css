@@ -353,7 +353,7 @@
     .User button:hover {
         background-color: #0056b3;
     }
-    #results .book {
+     .book {
       display: flex;
       align-items: center;
       margin-bottom: 15px;
@@ -612,4 +612,186 @@
 }
 #profileinfo{
 width:100%;height:100%;border:1px soild blcak; flex:3;
+}
+.friend-widget {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 280px;
+  padding: 15px;
+  margin-top: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.friend-widget h3 {
+  margin: 0 0 10px;
+  font-size: 1.1em;
+  text-align: center;
+}
+.friend-search-container {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.friend-search {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.friend-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.friend-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.friend-list .left {
+  display: flex;
+  align-items: center;
+}
+.friend-list img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+.friend-list .stats {
+  text-align: right;
+  font-size: 0.85em;
+  color: #444;
+}
+.empty-msg {
+  text-align: center;
+  font-size: 0.9em;
+  color: #666;
+}
+/* ── Game Filters Toolbar ───────────────────────────────────────────────────── */
+.game-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.game-filters button {
+  padding: 8px 12px;
+  border: none;
+  background: #eee;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+  font-size: 1em;
+}
+.game-filters button.active,
+.game-filters button:hover {
+  background: #8ab4f8;
+  color: #fff;
+}
+
+/* ── Section Grouping ──────────────────────────────────────────────────────── */
+.game-section,
+.popular-books {
+  margin-bottom: 30px;
+}
+.game-section h2,
+.popular-books h2 {
+  margin-bottom: 10px;
+  font-size: 1.4em;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 4px;
+}
+
+/* ── Game Cards ────────────────────────────────────────────────────────────── */
+.game-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 15px;
+  margin-bottom: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.game-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+.game-card img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-right: 20px;
+}
+.game-detail h2 {
+  margin: 0 0 6px;
+  font-size: 1.2em;
+}
+.game-detail p {
+  margin: 0;
+  color: #555;
+  font-size: 0.95em;
+}
+.game-section {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;              /* space between cards */
+}
+.game-section > h2 {
+  grid-column: 1 / -1;
+  margin-bottom: 10px; /* ensure there’s space before the cards */
+}
+/* ── Popular Books Section ─────────────────────────────────────────────────── */
+/* ── Horizontal, vertical‐card layout for popular books ───────────────────── */
+.popular-books {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;        /* scroll if viewport too small */
+  padding-bottom: 10px;    /* give space under cards */
+}
+.popular-books .book {
+  flex: 0 0 calc((100% / 5.6) - 13.33px); /* 3 cards per row, minus gaps */
+  display: flex;
+  flex-direction: column;  /* stack cover over info */
+  align-items: center;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 10px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.popular-books .book:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+.popular-books .book img {
+  width: 60%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+.popular-books .book-info h3 {
+  margin: 0 0 6px;
+  font-size: 1.1em;
+}
+.popular-books .book-info p {
+  margin: 0;
+  color: #555;
+  font-size: 0.9em;
+}
+
+.leftbox > h2,
+.leftbox > .popular-books {
+  flex: 0 0 100%;
+  max-width: 100%;
+  width: 100%;
+  border-bottom: 2px solid #ddd;
+
 }

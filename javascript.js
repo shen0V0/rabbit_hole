@@ -5,7 +5,14 @@ const toggleDropdown = menuId => {
     dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
   }
 };
-
+const isUser = () => {
+  const html = window.location.pathname.split("/").pop();
+  
+  if (html === "user.html") {
+    return true
+  }
+    else{return false}
+  };
 const togglePopup = () => {
   const popup = document.getElementById('hclPopup');
   const overlay = document.getElementById('overlay');
@@ -286,3 +293,295 @@ function showAlert(message, color, lasting) {
     setTimeout(() => popup.remove(), 300);
   }, (lasting ? lasting * 1000 : 3000));
 }
+// call this after DOMContentLoaded
+let relatedBooks = [];
+
+// 1) Fetch “Hans Christian Andersen” results
+function loadRelatedBooks() {
+
+  const resultsDiv = document.getElementById("relatedResults");
+  if (!resultsDiv) return;
+  resultsDiv.innerHTML = "<p>Loading…</p>";
+
+  fetch(
+    "https://openlibrary.org/search.json?q=" +
+      encodeURIComponent("Hans Christian Andersen")
+  )
+  .then(response => response.json())
+  .then((data) => {
+      relatedBooks = data.docs || [];
+      renderRelatedBooks();
+    })
+    .catch((err) => {
+      console.error(err);
+      resultsDiv.innerHTML = "<p>Error loading related books.</p>";
+    });
+}
+
+// 2) Render up to 5 books in the same style as renderBooks()
+function renderRelatedBooks() {
+  const resultsDiv = document.getElementById("relatedResults");
+  if (!resultsDiv) return;
+
+  resultsDiv.innerHTML = "";         // clear “Loading…”
+
+  // take first 5
+  relatedBooks.slice(0, 5).forEach((book) => {
+    
+    // cover
+     const div = document.createElement("div");
+    div.className = "book";
+
+    const coverImg = document.createElement("img");
+    coverImg.src = book.cover_i 
+      ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` 
+      : "./imgs/default_cover.png";
+
+    const infoDiv = document.createElement("div");
+    infoDiv.className = "book-info";
+    const title = book.title || "No Title";
+    const authors = book.author_name ? book.author_name.join(", ") : "Unknown Author";
+    infoDiv.innerHTML = `<h3>${title}</h3><p><strong>Author(s):</strong> ${authors}</p>`;
+
+    if (book.ia && book.ia.length > 0) {
+      const readBtn = document.createElement("button");
+      readBtn.className = "read-button";
+      readBtn.textContent = "Read";
+      readBtn.addEventListener("click", () => {
+        Myfunction.showBookActionWindow(book);
+        togglereader();
+        const iaId = book.ia[0];
+        const embedUrl = `https://archive.org/embed/${iaId}?ui=embed`;
+        const readerDiv = document.getElementById("reader");
+        if (readerDiv) {
+          readerDiv.innerHTML = `
+            <button class="close-button" onclick="togglereader()">Close</button>
+            <h2>Reading: ${title}</h2>
+            <iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe>
+          `;
+          readerDiv.scrollIntoView({ behavior: "smooth" });
+        }
+      });
+      infoDiv.appendChild(readBtn);
+    } else {
+      const infoLink = document.createElement("a");
+      infoLink.href = `https://openlibrary.org${book.key}`;
+      infoLink.target = "_blank";
+      infoLink.textContent = "View Details";
+      infoDiv.appendChild(infoLink);
+    }
+
+    div.append(coverImg, infoDiv);
+    resultsDiv.appendChild(div);
+  });
+}
+
+
+// wire it up
+const isGamePage = () => {
+  const path = window.location.pathname;
+  // adjust if your file lives in a subfolder; this matches ".../game.html"
+  return path.substring(path.lastIndexOf('/') + 1) === 'game.html';
+};
+
+// --- your existing DOMContentLoaded listener ---
+document.addEventListener("DOMContentLoaded", () => {
+  // only run page-specific code when on game.html
+  if (!isGamePage()) return;
+
+  // 1) Existing search setup
+  const searchInput = "Hans Christian Andersen";
+  if (!searchInput) return;
+  // … default keyword logic, search(), etc. …
+  console.log("loading")
+  // 2) Related books loader
+  loadRelatedBooks();
+});
+const mockUsers = [
+  { username: "Alice", readTime: "12h", score: 800, avatar: "https://i.pravatar.cc/36?u=alice" },
+  { username: "Bob", readTime: "9h", score: 600, avatar: "https://i.pravatar.cc/36?u=bob" },
+  { username: "Charlie", readTime: "14h", score: 950, avatar: "https://i.pravatar.cc/36?u=charlie" },
+  { username: "Diana", readTime: "7h", score: 500, avatar: "https://i.pravatar.cc/36?u=diana" },
+];
+
+
+let addedFriends = [];
+let storageKey = "";
+
+function renderFriendList(addedFriends) {
+  friendList.innerHTML = "";
+  if (addedFriends.length === 0) {
+    noFriendsMsg.style.display = "block";
+    return;
+  }
+  noFriendsMsg.style.display = "none";
+  addedFriends.forEach(user => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <div class="left">
+        <img src="${user.avatar}" alt="${user.username}">
+        <span>${user.username}</span>
+      </div>
+      <div class="stats">
+        ${user.readTime}<br>${user.score} pts
+      </div>
+    `;
+    friendList.appendChild(li);
+  });
+}
+if(isUser()){
+addFriendBtn.addEventListener("click", () => {
+  const query = friendSearch.value.trim().toLowerCase();
+  if (!query) return;
+
+  const found = mockUsers.find(u => u.username.toLowerCase() === query);
+  if (!found) {
+    showAlert("User not found.");
+    return;
+  }
+  if (addedFriends.find(f => f.username === found.username)) {
+    showAlert("Already added.");
+    return;
+  }
+
+  addedFriends.push(found);
+  localStorage.setItem(storageKey, JSON.stringify(addedFriends));
+  renderFriendList(addedFriends); // Pass the updated list
+  friendSearch.value = "";
+});}
+
+
+
+function waitForUsername(callback) {
+  const interval = setInterval(() => {
+    const usernameEl = document.getElementById("username");
+    const username = usernameEl?.innerText?.trim();
+    if (username) {
+      clearInterval(interval);
+      callback(username);
+    }
+  }, 100);
+}
+
+waitForUsername((currentUser) => {
+  if (!isUser()) return;
+  storageKey = `friends_${currentUser}`;
+  addedFriends = JSON.parse(localStorage.getItem(storageKey)) || [];
+  renderFriendList(addedFriends);
+});
+// Initialize Game Filters
+function initGameFilters() {
+  const filterButtons = document.querySelectorAll('.game-filters button');
+  const sections      = document.querySelectorAll('.game-section');
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // 1) Toggle active class
+      filterButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // 2) Show/hide sections
+      const filter = btn.dataset.filter;
+      sections.forEach(sec => {
+        sec.style.display = (filter === 'All' || sec.dataset.category === filter)
+          ? ''     // show
+          : 'none';// hide
+      });
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initGameFilters();
+});
+
+
+// 1) Utility: shuffle an array
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// 2) Fetch & render 3 random books, with dynamic Read/View logic
+async function loadPopularBooks() {
+  const container = document.querySelector('.popular-books');
+  if (!container) return;
+
+  container.innerHTML = '<p>Loading popular books…</p>';
+
+  try {
+    const res  = await fetch('https://openlibrary.org/search.json?q=fiction&limit=50');
+    const data = await res.json();
+    let docs   = data.docs || [];
+
+    shuffle(docs);
+    docs = docs.slice(0, 5);
+
+    // clear the container
+    container.innerHTML = '';
+
+    docs.forEach(book => {
+      const title   = book.title || 'No title';
+      const author  = book.author_name?.[0] || 'Unknown author';
+      const coverId = book.cover_i;
+
+      // build the card
+      const card = document.createElement('div');
+      card.className = 'book';
+
+      // cover image
+      const img = document.createElement('img');
+      img.src = coverId
+        ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
+        : 'imgs/default_cover.png';
+      img.alt = title;
+      card.appendChild(img);
+
+      // info container
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'book-info';
+      infoDiv.innerHTML = `<h3>${title}</h3><p>by ${author}</p>`;
+      card.appendChild(infoDiv);
+
+      // Read or View Details button
+      if (book.ia && book.ia.length > 0) {
+        const readBtn = document.createElement('button');
+        readBtn.className = 'read-button';
+        readBtn.textContent = 'Read';
+        readBtn.addEventListener('click', () => {
+          Myfunction.showBookActionWindow(book);
+          togglereader();
+          const iaId    = book.ia[0];
+          const embedUrl= `https://archive.org/embed/${iaId}?ui=embed`;
+          const rd      = document.getElementById('reader');
+          rd.innerHTML  = `
+            <button class="close-button" onclick="togglereader()">Close</button>
+            <h2>Reading: ${title}</h2>
+            <iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe>
+          `;
+          rd.scrollIntoView({ behavior: 'smooth' });
+        });
+        infoDiv.appendChild(readBtn);
+
+      } else {
+        const infoLink = document.createElement('a');
+        infoLink.href        = `https://openlibrary.org${book.key}`;
+        infoLink.target      = '_blank';
+        infoLink.textContent = 'View Details';
+        infoDiv.appendChild(infoLink);
+      }
+
+      container.appendChild(card);
+    });
+  } catch (err) {
+    console.error('Error loading popular books:', err);
+    container.innerHTML = '<p>Failed to load books.</p>';
+  }
+}
+
+// invoke on page load
+document.addEventListener('DOMContentLoaded', () => {
+  loadPopularBooks();
+});
