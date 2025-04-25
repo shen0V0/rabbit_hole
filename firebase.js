@@ -614,7 +614,40 @@ async function Check() {
     // Append the toggle button to rightbox and set rightbox initial content as leaderboard.
     rightbox.innerHTML=`
     <button id="switch" onclick="Myfunction.toggleRightboxView()">Switch to Bookshelf</button>
-        <h3 style="margin-top: 0;">Time-based Leaderboard</h3>
+    <h3 style="margin-top: 0;">Friends Broad</h3>
+        <div class="leaderboard-section">
+          <h4>Weekly-Reading</h4>
+          <ul>
+           <li>1. Alice - 15h</li>
+            <li>2. Bob - 12h</li>
+            <li>3.You - 0 h</li>
+          </ul>
+        </div>
+        <div class="leaderboard-section">
+          <h4>Total-Reading</h4>
+          <ul>
+              <li>1. Alice - 100h</li>
+            <li>2. Bob - 85h</li>
+            <li>3. You-0 h</li>
+          </ul>
+          </div>
+          <div class="leaderboard-section">
+            <h4>Weekly-Score</h4>
+          <ul>
+           <li>1. Alice - 5000 pts</li>
+            <li>2. Bob - 4500 pts</li>
+            <li>3.You - 0 pt</li>
+          </ul>
+        </div>
+        <div class="leaderboard-section">
+          <h4>Total-Score</h4>
+          <ul>
+          <li>1. Alice - 50000 pts</li>
+            <li>2. Bob - 42000 pts</li>
+            <li>3.You-0 pt</li>
+          </ul>
+        </div>   
+    <h3 >Reading Time Board</h3>
         <div class="leaderboard-section">
           <h4>Weekly</h4>
           <ul>
@@ -631,7 +664,7 @@ async function Check() {
             <li>3. Charlie - 75h</li>
           </ul>
         </div>
-        <h3>Score-based Leaderboard</h3>
+        <h3>Score Board</h3>
         <div class="leaderboard-section">
           <h4>Weekly</h4>
           <ul>
@@ -652,7 +685,8 @@ async function Check() {
   } else {
     // If no user is signed in, simply show the leaderboard.
     rightbox.innerHTML = `
-        <h3>Time-based Leaderboard</h3>
+     
+        <h3>Reading Time Board</h3>
         <div class="leaderboard-section">
           <h4>Weekly</h4>
           <ul>
@@ -669,7 +703,7 @@ async function Check() {
             <li>3. Charlie - 75h</li>
           </ul>
         </div>
-        <h3>Score-based Leaderboard</h3>
+        <h3>SScore Board</h3>
         <div class="leaderboard-section">
           <h4>Weekly</h4>
           <ul>
@@ -827,7 +861,7 @@ async function toggleRightboxView() {
 
     rightbox.innerHTML =`
     <button id="switch" onclick="Myfunction.toggleRightboxView()">Switch to Bookshelf</button>
-      <h3 style="margin-top: 0;">Time-based Leaderboard</h3>
+      <h3 style="margin-top: 0;">Reading Time Board</h3>
       <div class="leaderboard-section">
         <h4>Weekly</h4>
         <ul>
@@ -844,7 +878,7 @@ async function toggleRightboxView() {
           <li>3. Charlie - 75h</li>
         </ul>
       </div>
-      <h3>Score-based Leaderboard</h3>
+      <h3>SScore Board</h3>
       <div class="leaderboard-section">
         <h4>Weekly</h4>
         <ul>

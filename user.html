@@ -8,6 +8,7 @@
     <script type="module" src="firebase.js" defer></script>
     <script src="javascript.js" defer></script>
     <title>Rabbit Hole</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
 </head>
 <body>
@@ -60,14 +61,39 @@
                 <div id="username"></div>
                 <button onclick="Myfunction.editprofile()" style="width: 110px;height: 39px;border-radius: 10px;">Edit Profile</button>
                 <div id="friendWidget" class="friend-widget">
-                    <h3>Friends</h3>
-                    <div class="friend-search-container">
-                      <input type="text" id="friendSearch" placeholder="Search users…" class="friend-search" />
-                      <button id="addFriendBtn" class="button">Add</button>
-                    </div>
-                    <ul id="friendList" class="friend-list"></ul>
-                    <p id="noFriendsMsg" class="empty-msg">You have no friends yet.</p>
+                  <h3>Friends</h3>
+                  <div class="friend-search-container">
+                    <input type="text" id="friendSearch" placeholder="Search users…" class="friend-search" />
+                    <button id="addFriendBtn" class="button">Add</button>
                   </div>
+                
+                  <!-- No friends message -->
+                  <p id="noFriendsMsg" class="empty-msg" style="display: none;">You have no friends yet.</p>
+                
+                  <!-- Friend List Section -->
+                  <ul id="friendList" class="friend-list"></ul>
+                </div>
+                
+                <!-- Overlay for Chat Window -->
+                <div id="overlay" class="overlay" style="display: none;"></div>
+                
+                <!-- Chat Window -->
+                <!-- Chat Window -->
+<div id="chatWindow" class="chat-window" style="display: none;">
+  <div id="chatHeader">
+    <span id="chatWithUsername">Chat with</span>
+    <button id="closeChatBtn" class="button">Close</button>
+  </div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div id="chatInputContainer" class="chat-input-container">
+    <input type="text" id="chatInput" placeholder="Type a message..." class="chat-input" />
+    <button id="sendBtn" class="button send-btn">Send</button>
+  </div>
+</div>
+
+                
+                
+                
                   
             </div>
                         <div id="profile info"style="width:100%; height:100%; border:1px solid black;border-radius:30px; flex:8; padding: 10px;">
@@ -76,16 +102,20 @@
                               <!-- Total Reading Time -->
                               <div class="profile-item" style="flex: 1 0.5 calc(50% - 10px); border: 1px solid #ccc; padding: 10px;">
                                 <h3>Total Reading Time</h3>
+                                <i class="fas fa-book-reader"></i>
                                 <p id="totalReadingTime">0 hrs</p>
                               </div>
                               <!-- Streaks -->
                               <div class="profile-item" style="flex: 1 0.5 calc(50% - 10px); border: 1px solid #ccc; padding: 10px;">
                                 <h3>Streaks</h3>
+                                <i class="fas fa-fire"></i>
+
                                 <p id="streaks">0 days</p>
                               </div>
                               <!-- Total Game Score -->
                               <div class="profile-item" style="flex: 1 0.5 calc(50% - 10px); border: 1px solid #ccc; padding: 10px;">
                                 <h3>Total Game Score</h3>
+                                <i class="fas fa-gamepad"></i>
                                 <p id="gameScore">0</p>
                               </div>
                             </div>
@@ -105,39 +135,39 @@
         </div>
         <div class="rightbox">
             <div class="leaderboard">
-                <h3>Time-based Leaderboard</h3>
-                <div class="leaderboard-section">
-                    <h4>Weekly</h4>
-                    <ul>
-                        <li>1. Alice - 15h</li>
-                        <li>2. Bob - 12h</li>
-                        <li>3. Charlie - 10h</li>
-                    </ul>
-                </div>
-                <div class="leaderboard-section">
-                    <h4>Subtotal</h4>
-                    <ul>
-                        <li>1. Alice - 100h</li>
-                        <li>2. Bob - 85h</li>
-                        <li>3. Charlie - 75h</li>
-                    </ul>
-                </div>
-                <h3>Score-based Leaderboard</h3>
-                <div class="leaderboard-section">
-                    <h4>Weekly</h4>
-                    <ul>
-                        <li>1. Alice - 5000 pts</li>
-                        <li>2. Bob - 4500 pts</li>
-                        <li>3. Charlie - 4000 pts</li>
-                    </ul>
-                </div>
-                <div class="leaderboard-section">
-                    <h4>Subtotal</h4>
-                    <ul>
-                        <li>1. Alice - 50000 pts</li>
-                        <li>2. Bob - 42000 pts</li>
-                        <li>3. Charlie - 39000 pts</li>
-                    </ul>
+<h3 >Reading Time Board</h3>
+        <div class="leaderboard-section">
+          <h4>Weekly</h4>
+          <ul>
+            <li>1. Alice - 15h</li>
+            <li>2. Bob - 12h</li>
+            <li>3. Charlie - 10h</li>
+          </ul>
+        </div>
+        <div class="leaderboard-section">
+          <h4>Subtotal</h4>
+          <ul>
+            <li>1. Alice - 100h</li>
+            <li>2. Bob - 85h</li>
+            <li>3. Charlie - 75h</li>
+          </ul>
+        </div>
+        <h3>Score Board</h3>
+        <div class="leaderboard-section">
+          <h4>Weekly</h4>
+          <ul>
+            <li>1. Alice - 5000 pts</li>
+            <li>2. Bob - 4500 pts</li>
+            <li>3. Charlie - 4000 pts</li>
+          </ul>
+        </div>
+        <div class="leaderboard-section">
+          <h4>Subtotal</h4>
+          <ul>
+            <li>1. Alice - 50000 pts</li>
+            <li>2. Bob - 42000 pts</li>
+            <li>3. Charlie - 39000 pts</li>
+          </ul>
                 </div>
             </div>
         </div>

@@ -402,23 +402,24 @@ const mockUsers = [
   { username: "Bob", readTime: "9h", score: 600, avatar: "https://i.pravatar.cc/36?u=bob" },
   { username: "Charlie", readTime: "14h", score: 950, avatar: "https://i.pravatar.cc/36?u=charlie" },
   { username: "Diana", readTime: "7h", score: 500, avatar: "https://i.pravatar.cc/36?u=diana" },
+  { username: "Jason", readTime: "1h", score: 390, avatar: "./imgs/jason.jpg" }
 ];
-
 
 let addedFriends = [];
 let storageKey = "";
 
 function renderFriendList(addedFriends) {
+  const friendList = document.getElementById("friendList");
   friendList.innerHTML = "";
   if (addedFriends.length === 0) {
-    noFriendsMsg.style.display = "block";
+    document.getElementById("noFriendsMsg").style.display = "block";
     return;
   }
-  noFriendsMsg.style.display = "none";
+  document.getElementById("noFriendsMsg").style.display = "none";
   addedFriends.forEach(user => {
     const li = document.createElement("li");
     li.innerHTML = `
-      <div class="left">
+      <div class="left" style="cursor: pointer;" data-username="${user.username}">
         <img src="${user.avatar}" alt="${user.username}">
         <span>${user.username}</span>
       </div>
@@ -426,31 +427,99 @@ function renderFriendList(addedFriends) {
         ${user.readTime}<br>${user.score} pts
       </div>
     `;
+    
+    // Add click event listener to open chat when clicking avatar or name
+    li.querySelector('.left').addEventListener("click", () => openChatWindow(user));
+
     friendList.appendChild(li);
   });
 }
-if(isUser()){
-addFriendBtn.addEventListener("click", () => {
-  const query = friendSearch.value.trim().toLowerCase();
-  if (!query) return;
 
-  const found = mockUsers.find(u => u.username.toLowerCase() === query);
-  if (!found) {
-    showAlert("User not found.");
-    return;
-  }
-  if (addedFriends.find(f => f.username === found.username)) {
-    showAlert("Already added.");
-    return;
-  }
+function openChatWindow(friend) {
+  const chatWindow = document.getElementById("chatWindow");
+  const overlay = document.getElementById("overlay");
+  const chatWithUsername = document.getElementById("chatWithUsername");
+  const chatMessages = document.getElementById("chatMessages");
 
-  addedFriends.push(found);
-  localStorage.setItem(storageKey, JSON.stringify(addedFriends));
-  renderFriendList(addedFriends); // Pass the updated list
-  friendSearch.value = "";
-});}
+  chatWithUsername.innerText = `${friend.username}`;
+  chatMessages.innerHTML = ""; // Reset the messages
+  chatWindow.style.display = "block";
+  overlay.style.display = "block";
 
+  // Optional: Add mock messages for the selected friend
+  const message = document.createElement("div");
+  message.classList.add("message");
+  message.innerText = `Hello ${friend.username}, how are you?`;
+  chatMessages.appendChild(message);
 
+  // Scroll to the latest message
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  // Handle chat input
+  const chatInput = document.getElementById("chatInput");
+  const sendBtn = document.getElementById("sendBtn");
+
+  sendBtn.addEventListener("click", () => {
+    if (chatInput.value.trim() !== "") {
+      const newMessage = document.createElement("div");
+      newMessage.classList.add("message", "self");
+      newMessage.innerText = chatInput.value.trim();
+      chatMessages.appendChild(newMessage);
+      chatInput.value = ""; // Clear input
+      chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to latest message
+    }
+  });
+
+  // Handle Enter key
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && chatInput.value.trim() !== "") {
+      const newMessage = document.createElement("div");
+      newMessage.classList.add("message", "self");
+      newMessage.innerText = chatInput.value.trim();
+      chatMessages.appendChild(newMessage);
+      chatInput.value = ""; // Clear input
+      chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to latest message
+    }
+  });
+
+  // Close chat window when clicking the close button
+  const closeChatBtn = document.getElementById("closeChatBtn");
+  closeChatBtn.addEventListener("click", () => {
+    chatWindow.style.display = "none"; // Close the chat window
+    overlay.style.display = "none"; // Hide the overlay
+  });
+
+  // Close chat when clicking on the overlay
+  overlay.addEventListener("click", () => {
+    chatWindow.style.display = "none"; // Close the chat window
+    overlay.style.display = "none"; // Hide the overlay
+  });
+}
+
+if (isUser()) {
+  const addFriendBtn = document.getElementById("addFriendBtn");
+  const friendSearch = document.getElementById("friendSearch");
+
+  addFriendBtn.addEventListener("click", () => {
+    const query = friendSearch.value.trim().toLowerCase();
+    if (!query) return;
+
+    const found = mockUsers.find(u => u.username.toLowerCase() === query);
+    if (!found) {
+      showAlert("User not found.");
+      return;
+    }
+    if (addedFriends.find(f => f.username === found.username)) {
+      showAlert("Already added.");
+      return;
+    }
+
+    addedFriends.push(found);
+    localStorage.setItem(storageKey, JSON.stringify(addedFriends));
+    renderFriendList(addedFriends);
+    friendSearch.value = "";
+  });
+}
 
 function waitForUsername(callback) {
   const interval = setInterval(() => {
@@ -469,6 +538,7 @@ waitForUsername((currentUser) => {
   addedFriends = JSON.parse(localStorage.getItem(storageKey)) || [];
   renderFriendList(addedFriends);
 });
+
 // Initialize Game Filters
 function initGameFilters() {
   const filterButtons = document.querySelectorAll('.game-filters button');

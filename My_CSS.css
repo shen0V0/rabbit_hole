@@ -440,6 +440,7 @@
         padding: 20px;
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 230px;
     }
     .leaderboard h3 {
         color: #f7232d;
@@ -612,66 +613,199 @@
 }
 #profileinfo{
 width:100%;height:100%;border:1px soild blcak; flex:3;
-}
+}/* Main Friend Widget */
 .friend-widget {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 280px;
+  max-width: 300px;
+  margin: 20px auto;
   padding: 15px;
-  margin-top: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background-color: #f9f9f9;
 }
-.friend-widget h3 {
-  margin: 0 0 10px;
-  font-size: 1.1em;
-  text-align: center;
-}
+
 .friend-search-container {
   display: flex;
-  gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
+
 .friend-search {
   flex: 1;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 10px;
+  margin-right: 10px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
 }
+
+.button {
+  padding: 8px 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: #45a049;
+}
+
 .friend-list {
-  list-style: none;
+  list-style-type: none;
   padding: 0;
   margin: 0;
-  max-height: 160px;
-  overflow-y: auto;
 }
+
 .friend-list li {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
 }
-.friend-list .left {
-  display: flex;
-  align-items: center;
-}
-.friend-list img {
-  width: 36px;
-  height: 36px;
+
+.friend-list li img {
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   margin-right: 10px;
 }
-.friend-list .stats {
+
+.friend-list li .left {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.friend-list li .stats {
   text-align: right;
-  font-size: 0.85em;
-  color: #444;
 }
+
 .empty-msg {
+  color: #888;
   text-align: center;
-  font-size: 0.9em;
-  color: #666;
 }
+
+/* Overlay for Chat Window */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none; /* Hidden by default */
+  z-index: 1000;
+}
+
+/* Chat Window */
+/* Chat Window */
+.chat-window {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 15px;
+  border: 1px solid #ddd;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  max-height: 80%;
+  overflow: hidden;
+  display: none;
+}
+
+#chatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+#chatHeader span {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+#closeChatBtn {
+  background-color: #f44336;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  position: fixed;
+  top: 5px;
+  right: -14px;
+  font-size: 14px;
+}
+
+#closeChatBtn:hover {
+  background-color: #e53935;
+  text-decoration: none;
+}
+
+.chat-messages {
+  height: 250px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #ddd;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+}
+
+.chat-input-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-input {
+  width: 80%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.send-btn {
+  padding: 8px 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-left: 5px;
+  height: 38px;
+}
+
+.send-btn:hover {
+  background-color: #45a049;
+  color:white;
+  text-decoration: none;
+}
+
+/* Optional: Styling for the message */
+.message {
+  padding: 5px 10px;
+  margin: 5px 0;
+  border-radius: 5px;
+  background-color: #e1f5fe;
+  max-width: 80%;
+}
+
+.message.self {
+  background-color: #c8e6c9;
+  align-self: flex-end;
+}
+
+
+/* Optional: Styling for the friend list item hover */
+.friend-list li:hover {
+  background-color: #f1f1f1;
+}
+
 /* ── Game Filters Toolbar ───────────────────────────────────────────────────── */
 .game-filters {
   display: flex;
@@ -794,4 +928,23 @@ width:100%;height:100%;border:1px soild blcak; flex:3;
   width: 100%;
   border-bottom: 2px solid #ddd;
 
+}.chat-window {
+  margin-top: 15px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+}
+
+.chat-messages {
+  height: 150px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.chat-input {
+  width: 80%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
 }
